@@ -2,6 +2,7 @@ using System;
 using Google.Cloud.PubSub.V1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,15 @@ namespace NCoreUtils.Queue
 {
     public class Startup
     {
+        static ForwardedHeadersOptions ConfigureForwardedHeaders()
+        {
+            var opts = new ForwardedHeadersOptions();
+            opts.KnownNetworks.Clear();
+            opts.KnownProxies.Clear();
+            opts.ForwardedHeaders = ForwardedHeaders.All;
+            return opts;
+        }
+
         private readonly IConfiguration _configuration;
 
         private readonly IWebHostEnvironment _env;
@@ -28,6 +38,7 @@ namespace NCoreUtils.Queue
             services
                 .AddSingleton(_ => publisherTask.Result)
                 .AddSingleton<IMediaProcessingQueue, MediaProcessingQueue>()
+                .AddCors()
                 .AddRouting();
         }
 
@@ -41,6 +52,11 @@ namespace NCoreUtils.Queue
             #endif
 
             app
+                .UseForwardedHeaders(ConfigureForwardedHeaders())
+                #if !DEBUG
+                .UsePrePopulateLoggingContext()
+                #endif
+                .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {
