@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NCoreUtils.AspNetCore;
 using NCoreUtils.Images;
 
 namespace NCoreUtils.Queue.Processor
