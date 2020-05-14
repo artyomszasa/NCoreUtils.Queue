@@ -36,6 +36,7 @@ namespace NCoreUtils.Queue
         {
             var publisherTask = PublisherClient.CreateAsync(new TopicName(_configuration["Google:ProjectId"], _configuration["Google:TopicId"]));
             services
+                .AddHttpContextAccessor()
                 .AddSingleton(_ => publisherTask.Result)
                 .AddSingleton<IMediaProcessingQueue, MediaProcessingQueue>()
                 .AddCors()
