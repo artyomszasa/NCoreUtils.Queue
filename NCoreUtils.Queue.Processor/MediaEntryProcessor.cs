@@ -63,12 +63,12 @@ namespace NCoreUtils.Queue
                 _logger.LogError($"Failed to process entry: unsupported entry type = {entry.EntryType}. [messageId = {messageId}]");
                 return 204; // Message should not be retried...
             }
-            if (Uri.TryCreate(entry.Source, UriKind.Absolute, out var sourceUri))
+            if (!Uri.TryCreate(entry.Source, UriKind.Absolute, out var sourceUri))
             {
                 _logger.LogError($"Failed to process entry: missing or invalid source uri = {entry.Source}. [messageId = {messageId}]");
                 return 204; // Message should not be retried...
             }
-            if (Uri.TryCreate(entry.Target, UriKind.Absolute, out var targetUri))
+            if (!Uri.TryCreate(entry.Target, UriKind.Absolute, out var targetUri))
             {
                 _logger.LogError($"Failed to process entry: missing or invalid target uri = {entry.Target}. [messageId = {messageId}]");
                 return 204; // Message should not be retried...

@@ -39,7 +39,14 @@ namespace NCoreUtils.Queue
                 .AddHttpContextAccessor()
                 .AddSingleton(_ => publisherTask.Result)
                 .AddSingleton<IMediaProcessingQueue, MediaProcessingQueue>()
-                .AddCors()
+                .AddCors(b => b.AddDefaultPolicy(opts => opts
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+                    // must be at least 2 domains for CORS middleware to send Vary: Origin
+                    .WithOrigins("https://example.com", "http://127.0.0.1")
+                    .SetIsOriginAllowed(_ => true)
+                ))
                 .AddRouting();
         }
 

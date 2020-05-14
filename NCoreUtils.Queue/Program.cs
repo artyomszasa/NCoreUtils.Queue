@@ -51,7 +51,7 @@ namespace NCoreUtils.Queue
                 .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddJsonFile("secrets/appsettings.json", optional: true, reloadOnChange: false)
-                .AddEnvironmentVariables("OAUTH2")
+                .AddEnvironmentVariables()
                 .Build();
 
         public static void Main(string[] args)

@@ -1,6 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,6 +11,15 @@ namespace NCoreUtils.Queue.Processor
 {
     public class Startup
     {
+        static ForwardedHeadersOptions ConfigureForwardedHeaders()
+        {
+            var opts = new ForwardedHeadersOptions();
+            opts.KnownNetworks.Clear();
+            opts.KnownProxies.Clear();
+            opts.ForwardedHeaders = ForwardedHeaders.All;
+            return opts;
+        }
+
         private readonly IConfiguration _configuration;
 
         private readonly IWebHostEnvironment _env;
@@ -23,18 +33,36 @@ namespace NCoreUtils.Queue.Processor
         public void ConfigureServices(IServiceCollection services)
         {
             services
+                .AddHttpContextAccessor()
+                .AddHttpClient()
                 .AddImageResizerClient(_configuration.GetSection("Images"))
-                .AddSingleton<MediaEntryProcessor>();
+                .AddSingleton<MediaEntryProcessor>()
+                .AddCors(b => b.AddDefaultPolicy(opts => opts
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+                    // must be at least 2 domains for CORS middleware to send Vary: Origin
+                    .WithOrigins("https://example.com", "http://127.0.0.1")
+                    .SetIsOriginAllowed(_ => true)
+                ))
+                .AddRouting();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            #if DEBUG
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+            #endif
 
             app
+                .UseForwardedHeaders(ConfigureForwardedHeaders())
+                #if !DEBUG
+                .UsePrePopulateLoggingContext()
+                #endif
+                .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {
