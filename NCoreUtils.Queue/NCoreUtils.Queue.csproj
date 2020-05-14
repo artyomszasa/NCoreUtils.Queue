@@ -6,12 +6,11 @@
     <RootNamespace>NCoreUtils.Queue</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.0.0" />
     <PackageReference Include="NCoreUtils.AspNetCore.Proto" Version="3.1.0-alpha8" />
-    <PackageReference Include="NCoreUtils.Data.Google.Cloud.Firestore" Version="3.1.0-alpha8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Abstractions\NCoreUtils.Queue.Abstractions.csproj" />
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
-    <ProjectReference Include="..\NCoreUtils.Queue.Internal\NCoreUtils.Queue.Internal.csproj" />
   </ItemGroup>
 </Project>

@@ -1,47 +1,33 @@
 using System;
-using System.Collections.Generic;
-using System.Data;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using NCoreUtils.Data;
-using NCoreUtils.Queue.Data;
+using Google.Cloud.PubSub.V1;
+using Google.Protobuf;
+using Microsoft.Extensions.Logging;
 
 namespace NCoreUtils.Queue
 {
     public class MediaProcessingQueue : IMediaProcessingQueue
     {
-        private IDataRepository<Entry> _repository;
+        private readonly ILogger _logger;
 
-        public MediaProcessingQueue(IDataRepository<Entry> repository)
+        private readonly PublisherClient _publisherClient;
+
+        private readonly JsonSerializerOptions _serializerOptions;
+
+        public MediaProcessingQueue(ILogger<MediaProcessingQueue> logger, PublisherClient publisherClient, JsonSerializerOptions serializerOptions)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _publisherClient = publisherClient ?? throw new ArgumentNullException(nameof(publisherClient));
+            _serializerOptions = serializerOptions ?? throw new ArgumentNullException(nameof(serializerOptions));
         }
 
-        public Task EnqueueAsync(IEnumerable<MediaQueueEntry> entries, CancellationToken cancellationToken = default)
-            => _repository.Context.TransactedAsync(
-                isolationLevel: IsolationLevel.Serializable,
-                cancellationToken: cancellationToken,
-                action: async () =>
-                {
-                    foreach (var input in entries)
-                    {
-                        var entry = new Entry(
-                            default!,
-                            EntryState.Pending,
-                            created: DateTime.Now,
-                            default,
-                            input.EntryType,
-                            input.Source,
-                            input.Target,
-                            input.Operation,
-                            input.TargetWidth,
-                            input.TargetHeight,
-                            input.WeightX,
-                            input.WeightY,
-                            input.TargetType
-                        );
-                        await _repository.PersistAsync(entry, cancellationToken);
-                    }
-                });
+        public async Task EnqueueAsync(MediaQueueEntry entry, CancellationToken cancellationToken = default)
+        {
+            var data = JsonSerializer.SerializeToUtf8Bytes(entry, _serializerOptions);
+            var messageId = await _publisherClient.PublishAsync(ByteString.CopyFrom(data));
+            _logger.LogInformation($"Successfully enqueued entry {entry} => {messageId}.");
+        }
     }
 }

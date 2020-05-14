@@ -12,11 +12,7 @@ namespace NCoreUtils.Queue.Internal
                 .SetDefaultInputType(InputType.Json(new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    Converters =
-                    {
-                        new MediaQueueEntriesConverter(),
-                        MediaQueueEntryConverter.Instance
-                    }
+                    Converters = { MediaQueueEntryConverter.Instance }
                 }));
 
         public static void Configure(ServiceDescriptorBuilder builder)

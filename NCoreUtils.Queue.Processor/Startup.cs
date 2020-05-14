@@ -1,14 +1,12 @@
 using System;
-using Google.Cloud.PubSub.V1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NCoreUtils.AspNetCore;
-using NCoreUtils.Queue.Internal;
+using NCoreUtils.Images;
 
-namespace NCoreUtils.Queue
+namespace NCoreUtils.Queue.Processor
 {
     public class Startup
     {
@@ -24,27 +22,27 @@ namespace NCoreUtils.Queue
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var publisherTask = PublisherClient.CreateAsync(new TopicName(_configuration["Google:ProjectId"], _configuration["Google:TopicId"]));
             services
-                .AddSingleton(_ => publisherTask.Result)
-                .AddSingleton<IMediaProcessingQueue, MediaProcessingQueue>()
-                .AddRouting();
+                .AddImageResizerClient(_configuration.GetSection("Images"))
+                .AddSingleton<MediaEntryProcessor>();
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            #if DEBUG
-            if (_env.IsDevelopment())
+            if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            #endif
 
             app
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {
-                    endpoints.MapProto<IMediaProcessingQueue>(MediaProcessingQueueProtoConfiguration.Configure);
+                    endpoints.MapPost("/", context =>
+                    {
+                        var processor = context.RequestServices.GetRequiredService<MediaEntryProcessor>();
+                        return processor.ProcessRequestAsync(context);
+                    });
                 });
         }
     }
