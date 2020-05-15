@@ -87,7 +87,7 @@ namespace NCoreUtils.Queue
             {
                 await _resizer.ResizeAsync(
                     new GoogleCloudStorageSource(sourceUri),
-                    new GoogleCloudStorageDestination(targetUri),
+                    new GoogleCloudStorageDestination(targetUri, isPublic: true, cacheControl: "private, max-age=31536000"),
                     new ResizeOptions(
                         entry.TargetType,
                         entry.TargetWidth,
