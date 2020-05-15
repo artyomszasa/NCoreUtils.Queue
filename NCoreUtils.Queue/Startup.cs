@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using Google.Cloud.PubSub.V1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -47,6 +48,11 @@ namespace NCoreUtils.Queue
                     .WithOrigins("https://example.com", "http://127.0.0.1")
                     .SetIsOriginAllowed(_ => true)
                 ))
+                .AddSingleton(new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    Converters = { MediaQueueEntryConverter.Instance }
+                })
                 .AddRouting();
         }
 

@@ -4,11 +4,12 @@
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>NCoreUtils</RootNamespace>
+    <Version>3.1.0-alpha8</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Client" Version="3.1.0-alpha8" />
+    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Client" Version="3.1.0-alpha9" />
   </ItemGroup>
 </Project>

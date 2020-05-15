@@ -4,10 +4,11 @@
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>NCoreUtils.Queue</RootNamespace>
+    <Version>3.1.0-alpha8</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="3.1.0" />
-    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Abstractions" Version="3.1.0-alpha8" />
+    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Abstractions" Version="3.1.0-alpha9" />
     <PackageReference Include="NCoreUtils.Extensions.Json" Version="1.0.2" />
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
