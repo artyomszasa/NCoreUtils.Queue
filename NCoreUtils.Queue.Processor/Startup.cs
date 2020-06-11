@@ -37,6 +37,7 @@ namespace NCoreUtils.Queue.Processor
                 .AddHttpContextAccessor()
                 .AddHttpClient()
                 .AddImageResizerClient(_configuration.GetSection("Images"))
+                .AddVideoResizerClient(_configuration.GetSection("Videos"))
                 .AddSingleton<MediaEntryProcessor>()
                 .AddCors(b => b.AddDefaultPolicy(opts => opts
                     .AllowAnyHeader()

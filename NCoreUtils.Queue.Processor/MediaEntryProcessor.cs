@@ -24,12 +24,15 @@ namespace NCoreUtils.Queue
 
         private ILogger _logger;
 
-        private readonly IImageResizer _resizer;
+        private readonly IImageResizer _imageResizer;
 
-        public MediaEntryProcessor(ILogger<MediaEntryProcessor> logger, IImageResizer resizer)
+        private readonly IVideoResizer _videoResizer;
+
+        public MediaEntryProcessor(ILogger<MediaEntryProcessor> logger, IImageResizer imageResizer, IVideoResizer videoResizer)
         {
-            _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
-            _resizer = resizer ?? throw new System.ArgumentNullException(nameof(resizer));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _imageResizer = imageResizer ?? throw new ArgumentNullException(nameof(imageResizer));
+            _videoResizer = videoResizer ?? throw new ArgumentNullException(nameof(videoResizer));
         }
 
         public async Task ProcessRequestAsync(HttpContext context)
@@ -51,18 +54,8 @@ namespace NCoreUtils.Queue
             return;
         }
 
-        public async Task<int> ProcessAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
+        public async Task<int> ProcessImageAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(entry.EntryType))
-            {
-                _logger.LogError($"Failed to process entry: missing entry type. [messageId = {messageId}]");
-                return 204; // Message should not be retried...
-            }
-            if (entry.EntryType != MediaQueueEntryTypes.Image)
-            {
-                _logger.LogError($"Failed to process entry: unsupported entry type = {entry.EntryType}. [messageId = {messageId}]");
-                return 204; // Message should not be retried...
-            }
             if (!Uri.TryCreate(entry.Source, UriKind.Absolute, out var sourceUri))
             {
                 _logger.LogError($"Failed to process entry: missing or invalid source uri = {entry.Source}. [messageId = {messageId}]");
@@ -85,7 +78,7 @@ namespace NCoreUtils.Queue
             }
             try
             {
-                await _resizer.ResizeAsync(
+                await _imageResizer.ResizeAsync(
                     new GoogleCloudStorageSource(sourceUri),
                     new GoogleCloudStorageDestination(targetUri, isPublic: true, cacheControl: "private, max-age=31536000"),
                     new ResizeOptions(
@@ -117,9 +110,94 @@ namespace NCoreUtils.Queue
             catch (Exception exn)
             {
                 _logger.LogError(exn, $"Failed to process image entry, operation may be retried. [messageId = {messageId}]");
-                return 400; // Message should not be retried...
+                return 400; // Message should be retried...
             }
             return 200;
+        }
+
+        public async Task<int> ProcessVideoAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
+        {
+            if (!Uri.TryCreate(entry.Source, UriKind.Absolute, out var sourceUri))
+            {
+                _logger.LogError($"Failed to process entry: missing or invalid source uri = {entry.Source}. [messageId = {messageId}]");
+                return 204; // Message should not be retried...
+            }
+            if (!Uri.TryCreate(entry.Target, UriKind.Absolute, out var targetUri))
+            {
+                _logger.LogError($"Failed to process entry: missing or invalid target uri = {entry.Target}. [messageId = {messageId}]");
+                return 204; // Message should not be retried...
+            }
+            if (sourceUri.Scheme != "gs")
+            {
+                _logger.LogError($"Failed to process entry: unsupported source uri = {entry.Source}. [messageId = {messageId}]");
+                return 204; // Message should not be retried...
+            }
+            if (targetUri.Scheme != "gs")
+            {
+                _logger.LogError($"Failed to process entry: unsupported target uri = {entry.Target}. [messageId = {messageId}]");
+                return 204; // Message should not be retried...
+            }
+            if (string.IsNullOrEmpty(entry.Operation) || entry.Operation == "resize")
+            {
+                try
+                {
+                    await _videoResizer.ResizeAsync(sourceUri, targetUri, new Videos.VideoOptions(entry.TargetType ?? "mp4", entry.TargetWidth, entry.TargetHeight, 75), cancellationToken);
+                    _logger.LogInformation("Successfully processed video {0} => {1}.", entry.Source, entry.Target);
+                    return 204;
+                }
+                catch (Exception exn)
+                {
+                    _logger.LogError(exn, $"Failed to process video entry, operation may be retried. [messageId = {messageId}]");
+                    // FIXME: Retryable error handling
+                    return 204; // Message should not be retried...
+                    // return 400; // Message should be retried...
+                }
+            }
+            else if (entry.Operation == "thumbnail")
+            {
+                try
+                {
+                    await _videoResizer.Thumbnail(sourceUri, targetUri, new ResizeOptions(
+                        imageType: entry.TargetType,
+                        width: entry.TargetWidth,
+                        height: entry.TargetHeight,
+                        resizeMode: "inbox"
+                    ), cancellationToken);
+                    _logger.LogInformation("Successfully created thumbnail {0} => {1}.", entry.Source, entry.Target);
+                    return 204;
+                }
+                catch (Exception exn)
+                {
+                    _logger.LogError(exn, $"Failed to process video(thumbnail) entry, operation may be retried. [messageId = {messageId}]");
+                    // FIXME: Retryable error handling
+                    return 204; // Message should not be retried...
+                    // return 400; // Message should be retried...
+                }
+            }
+            else
+            {
+                _logger.LogError("Unsupported video operation = {0}.", entry.Operation);
+                return 204; // Message should not be retried...
+            }
+        }
+
+        public ValueTask<int> ProcessAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(entry.EntryType))
+            {
+                _logger.LogError($"Failed to process entry: missing entry type. [messageId = {messageId}]");
+                return new ValueTask<int>(204); // Message should not be retried...
+            }
+            if (StringComparer.InvariantCultureIgnoreCase.Equals(entry.EntryType, MediaQueueEntryTypes.Image))
+            {
+                return new ValueTask<int>(ProcessImageAsync(entry, messageId, cancellationToken));
+            }
+            if (StringComparer.InvariantCultureIgnoreCase.Equals(entry.EntryType, MediaQueueEntryTypes.Video))
+            {
+                return new ValueTask<int>(ProcessVideoAsync(entry, messageId, cancellationToken));
+            }
+            _logger.LogError($"Failed to process entry: unsupported entry type = {entry.EntryType}. [messageId = {messageId}]");
+            return new ValueTask<int>(204); // Message should not be retried...
         }
     }
 }
