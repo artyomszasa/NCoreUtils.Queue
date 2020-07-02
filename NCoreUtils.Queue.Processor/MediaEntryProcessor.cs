@@ -22,7 +22,7 @@ namespace NCoreUtils.Queue
             Converters = { MediaQueueEntryConverter.Instance }
         };
 
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         private readonly IImageResizer _imageResizer;
 
@@ -137,11 +137,21 @@ namespace NCoreUtils.Queue
                 _logger.LogError($"Failed to process entry: unsupported target uri = {entry.Target}. [messageId = {messageId}]");
                 return 204; // Message should not be retried...
             }
-            if (string.IsNullOrEmpty(entry.Operation) || entry.Operation == "resize")
+            if (string.IsNullOrEmpty(entry.Operation) || entry.Operation == "resize" || entry.Operation.StartsWith("watermark:"))
             {
+                string? watermark = entry.Operation is null
+                    ? default
+                    : entry.Operation.StartsWith("watermark:")
+                        ? entry.Operation.Substring("watermark:".Length)
+                        : default;
                 try
                 {
-                    await _videoResizer.ResizeAsync(sourceUri, targetUri, new Videos.VideoOptions(entry.TargetType ?? "mp4", entry.TargetWidth, entry.TargetHeight, 75), cancellationToken);
+                    await _videoResizer.ResizeAsync(sourceUri, targetUri, new Videos.VideoOptions(
+                        entry.TargetType ?? "mp4",
+                        entry.TargetWidth,
+                        entry.TargetHeight,
+                        75,
+                        watermark), cancellationToken);
                     _logger.LogInformation("Successfully processed video {0} => {1}.", entry.Source, entry.Target);
                     return 204;
                 }
