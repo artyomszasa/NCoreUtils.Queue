@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>NCoreUtils.Queue</RootNamespace>
-    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
@@ -13,15 +13,20 @@
     <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
+    <TrimmerRootAssembly Include="System.Collections.Immutable" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Processor.Common\NCoreUtils.Queue.Processor.Common.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.7" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.7" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="3.1.2" />
     <PackageReference Include="Microsoft.NETCore.Targets" Version="3.1.0" />
-    <PackageReference Include="NCoreUtils.AspNetCore.Logging.GoogleFluentd" Version="3.1.0-alpha1" />
+    <PackageReference Include="MQTTnet" Version="3.0.12" />
     <PackageReference Include="NCoreUtils.Images.WebService.Client" Version="3.1.0-beta00" />
-    <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="3.1.0-alpha2" />
+    <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="3.1.0-beta00" />
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />

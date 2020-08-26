@@ -8,7 +8,7 @@ namespace NCoreUtils.Queue.Internal
         public static void Configure(ServiceDescriptorBuilder builder, string? path)
             => builder
                 .SetPath(path ?? string.Empty)
-                .SetNamingPolicy(NamingPolicy.SnakeCase)
+                .SetNamingPolicy(NamingConvention.SnakeCase)
                 .SetDefaultInputType(InputType.Json(new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
