@@ -124,12 +124,20 @@ namespace NCoreUtils.Queue
             var buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
             try
             {
-                using var stream = new MemoryStream(buffer, 0, buffer.Length, true, true);
-                await JsonSerializer.SerializeAsync(stream, payload, _serviceOptions.JsonSerializerOptions, cancellationToken);
-                stream.Seek(0, SeekOrigin.Begin);
+                int size;
+                using (var stream = new MemoryStream(buffer, 0, buffer.Length, true, true))
+                {
+                    await JsonSerializer.SerializeAsync(stream, payload, _serviceOptions.JsonSerializerOptions, cancellationToken);
+                    stream.Flush();
+                    unchecked
+                    {
+                        size = (int)stream.Position;
+                    }
+                }
+                using var payLoadStream = new MemoryStream(buffer, 0, size, false, true);
                 var message = new MqttApplicationMessageBuilder()
                     .WithAtLeastOnceQoS()
-                    .WithPayload(stream)
+                    .WithPayload(payLoadStream)
                     .WithTopic(_serviceOptions.Topic)
                     .Build();
                 var res = await _client.PublishAsync(message, cancellationToken);
