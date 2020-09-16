@@ -11,6 +11,23 @@ namespace NCoreUtils.Queue
 {
     public class MediaEntryProcessor
     {
+        protected abstract class Either<TLeft, TRight>
+        {
+            public sealed class Left : Either<TLeft, TRight>
+            {
+                public TLeft Value { get; }
+
+                public Left(TLeft value) => Value = value;
+            }
+
+            public sealed class Right : Either<TLeft, TRight>
+            {
+                public TRight Value { get; }
+
+                public Right(TRight value) => Value = value;
+            }
+        }
+
         public ILogger Logger { get; }
 
         private readonly IImageResizer _imageResizer;
@@ -28,33 +45,87 @@ namespace NCoreUtils.Queue
 
         */
 
+        protected virtual Either<IImageSource, string> ResolveSource(string? source, string messageId)
+        {
+            if (source is null)
+            {
+                return new Either<IImageSource, string>.Right($"Failed to process entry: missing or invalid source uri = {source}. [messageId = {messageId}]");
+            }
+            if (source.StartsWith("/"))
+            {
+                source = "file://" + source;
+            }
+            if (!Uri.TryCreate(source, UriKind.Absolute, out var sourceUri))
+            {
+                return new Either<IImageSource, string>.Right($"Failed to process entry: missing or invalid source uri = {source}. [messageId = {messageId}]");
+            }
+            if (sourceUri.Scheme == "gs")
+            {
+                return new Either<IImageSource, string>.Left(new GoogleCloudStorageSource(sourceUri));
+            }
+            if (sourceUri.Scheme == "file")
+            {
+                return new Either<IImageSource, string>.Left(new FileSystemSource(sourceUri.AbsolutePath));
+            }
+            return new Either<IImageSource, string>.Right($"Failed to process entry: unsupported source uri = {source}. [messageId = {messageId}]");
+        }
+
+        protected virtual Either<IImageDestination, string> ResolveDestination(string? destination, string messageId)
+        {
+            if (destination is null)
+            {
+                return new Either<IImageDestination, string>.Right($"Failed to process entry: missing or invalid destination uri = {destination}. [messageId = {messageId}]");
+            }
+            if (destination.StartsWith("/"))
+            {
+                destination = "file://" + destination;
+            }
+            if (!Uri.TryCreate(destination, UriKind.Absolute, out var destinationUri))
+            {
+                return new Either<IImageDestination, string>.Right($"Failed to process entry: missing or invalid destination uri = {destination}. [messageId = {messageId}]");
+            }
+            if (destinationUri.Scheme == "gs")
+            {
+                return new Either<IImageDestination, string>.Left(new GoogleCloudStorageDestination(destinationUri, isPublic: true, cacheControl: "private, max-age=31536000"));
+            }
+            if (destinationUri.Scheme == "file")
+            {
+                return new Either<IImageDestination, string>.Left(new FileSystemDestination(destinationUri.AbsolutePath));
+            }
+            return new Either<IImageDestination, string>.Right($"Failed to process entry: unsupported destination uri = {destination}. [messageId = {messageId}]");
+        }
+
         public async Task<int> ProcessImageAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
         {
-            if (!Uri.TryCreate(entry.Source, UriKind.Absolute, out var sourceUri))
+            IImageSource source;
+            IImageDestination destination;
+            switch (ResolveSource(entry.Source, messageId))
             {
-                Logger.LogError($"Failed to process entry: missing or invalid source uri = {entry.Source}. [messageId = {messageId}]");
-                return 204; // Message should not be retried...
+                case Either<IImageSource, string>.Left l:
+                    source = l.Value;
+                    break;
+                case Either<IImageSource, string>.Right r:
+                    Logger.LogError(r.Value);
+                    return 204; // Message should not be retried...
+                default:
+                    throw new InvalidOperationException("Should never happen");
             }
-            if (!Uri.TryCreate(entry.Target, UriKind.Absolute, out var targetUri))
+            switch (ResolveDestination(entry.Target, messageId))
             {
-                Logger.LogError($"Failed to process entry: missing or invalid target uri = {entry.Target}. [messageId = {messageId}]");
-                return 204; // Message should not be retried...
-            }
-            if (sourceUri.Scheme != "gs")
-            {
-                Logger.LogError($"Failed to process entry: unsupported source uri = {entry.Source}. [messageId = {messageId}]");
-                return 204; // Message should not be retried...
-            }
-            if (targetUri.Scheme != "gs")
-            {
-                Logger.LogError($"Failed to process entry: unsupported target uri = {entry.Target}. [messageId = {messageId}]");
-                return 204; // Message should not be retried...
+                case Either<IImageDestination, string>.Left l:
+                    destination = l.Value;
+                    break;
+                case Either<IImageDestination, string>.Right r:
+                    Logger.LogError(r.Value);
+                    return 204; // Message should not be retried...
+                default:
+                    throw new InvalidOperationException("Should never happen");
             }
             try
             {
                 await _imageResizer.ResizeAsync(
-                    new GoogleCloudStorageSource(sourceUri),
-                    new GoogleCloudStorageDestination(targetUri, isPublic: true, cacheControl: "private, max-age=31536000"),
+                    source,
+                    destination,
                     new ResizeOptions(
                         entry.TargetType,
                         entry.TargetWidth,
