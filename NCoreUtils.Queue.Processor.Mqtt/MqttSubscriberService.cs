@@ -51,7 +51,10 @@ namespace NCoreUtils.Queue
         {
             try
             {
-                _logger.LogInformation("Received payload: {{ {0} }}.", string.Join(", ", eventArgs.ApplicationMessage.Payload.Select(b => "0x" + b.ToString("X2"))));
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug("Received payload: {{ {0} }}.", string.Join(", ", eventArgs.ApplicationMessage.Payload.Select(b => "0x" + b.ToString("X2"))));
+                }
                 var entry = JsonSerializer.Deserialize<MediaQueueEntry>(eventArgs.ApplicationMessage.Payload, _serviceOptions.JsonSerializerOptions);
                 var status = await _processor.ProcessAsync(entry, "<none>", CancellationToken.None);
                 eventArgs.ProcessingFailed = status >= 400;
