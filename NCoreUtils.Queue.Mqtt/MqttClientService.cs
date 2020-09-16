@@ -10,6 +10,7 @@ using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
+using MQTTnet.Client.Publishing;
 
 namespace NCoreUtils.Queue
 {
@@ -132,6 +133,10 @@ namespace NCoreUtils.Queue
                     .WithTopic(_serviceOptions.Topic)
                     .Build();
                 var res = await _client.PublishAsync(message, cancellationToken);
+                if (res.ReasonCode != MqttClientPublishReasonCode.Success)
+                {
+                    throw new InvalidOperationException($"Message publishing failed with reason: {res.ReasonCode} {res.ReasonString}");
+                }
                 return res.PacketIdentifier;
             }
             finally

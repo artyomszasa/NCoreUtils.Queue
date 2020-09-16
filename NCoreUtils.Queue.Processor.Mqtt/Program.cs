@@ -44,6 +44,7 @@ namespace NCoreUtils.Queue
                 new MqttClientOptionsBuilder()
                     .WithTcpServer(mqttConfig.Host ?? throw new InvalidOperationException("No MQTT host supplied."), mqttConfig.Port)
                     .WithCleanSession(mqttConfig.CleanSession ?? true)
+                    .WithClientId(mqttConfig.ClientId ?? "ncoreutils-queue-client")
                     .Build();
             return new HostBuilder()
                 .UseConsoleLifetime()
