@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -26,7 +23,7 @@ namespace NCoreUtils.Queue.Mqtt
             }
             else
             {
-                return new IPEndPoint(IPAddress.Parse(input.Substring(0, portIndex)), int.Parse(input.Substring(portIndex + 1)));
+                return new IPEndPoint(IPAddress.Parse(input.Substring(0, portIndex)), int.Parse(input[(portIndex + 1)..]));
             }
         }
 
