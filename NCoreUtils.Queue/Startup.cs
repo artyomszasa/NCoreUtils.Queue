@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Google.Cloud.PubSub.V1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -70,6 +71,15 @@ namespace NCoreUtils.Queue
                 #if !DEBUG
                 .UsePrePopulateLoggingContext()
                 #endif
+                .Use((context, next) =>
+                {
+                    if (context.Request.Path == "/healthz")
+                    {
+                        context.Response.StatusCode = 200;
+                        return Task.CompletedTask;
+                    }
+                    return next();
+                })
                 .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>
