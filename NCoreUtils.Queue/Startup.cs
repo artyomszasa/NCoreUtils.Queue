@@ -9,6 +9,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NCoreUtils.AspNetCore;
+#if !DEBUG
+using NCoreUtils.Logging;
+#endif
 using NCoreUtils.Queue.Internal;
 
 namespace NCoreUtils.Queue
