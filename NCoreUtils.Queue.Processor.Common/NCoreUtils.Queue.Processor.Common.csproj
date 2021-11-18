@@ -9,10 +9,10 @@
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.7" />
-    <PackageReference Include="NCoreUtils.Images.Abstractions" Version="3.1.0-beta00" />
-    <PackageReference Include="NCoreUtils.Images.GoogleCloudStorage" Version="3.1.0-beta01" />
-    <PackageReference Include="NCoreUtils.Images.FileSystem" Version="3.1.0-beta01" />
-    <PackageReference Include="NCoreUtils.Videos.Abstractions" Version="3.1.0-alpha2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.16" />
+    <PackageReference Include="NCoreUtils.Images.Abstractions" Version="3.1.0" />
+    <PackageReference Include="NCoreUtils.Images.GoogleCloudStorage" Version="3.1.0" />
+    <PackageReference Include="NCoreUtils.Images.FileSystem" Version="3.1.0.1" />
+    <PackageReference Include="NCoreUtils.Videos.Abstractions" Version="3.1.0-beta01" />
   </ItemGroup>
 </Project>
