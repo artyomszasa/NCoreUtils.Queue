@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NCoreUtils.AspNetCore;
 using NCoreUtils.Images;
+using NCoreUtils.Logging;
 
 namespace NCoreUtils.Queue.Processor
 {
