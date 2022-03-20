@@ -8,6 +8,8 @@ namespace NCoreUtils.Queue.Internal
     {
         public static MediaQueueEntryConverter Instance { get; } = new MediaQueueEntryConverter();
 
+        private MediaQueueEntryConverter() { }
+
         public override MediaQueueEntry Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)

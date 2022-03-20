@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -9,25 +10,23 @@ namespace NCoreUtils.Queue
 {
     public static class MediaEntryProcessorExtensions
     {
-        static private readonly JsonSerializerOptions requestSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        static private readonly JsonSerializerOptions entrySerializerOptions = new JsonSerializerOptions
+        static private readonly JsonSerializerOptions entrySerializerOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             Converters = { MediaQueueEntryConverter.Instance }
         };
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "JSON serialization using explicit converter.")]
         public static async Task ProcessRequestAsync(this MediaEntryProcessor processor, HttpContext context)
         {
             PubSubRequest req;
             MediaQueueEntry entry;
             try
             {
-                req = await JsonSerializer.DeserializeAsync<PubSubRequest>(context.Request.Body, requestSerializerOptions, context.RequestAborted);
-                entry = JsonSerializer.Deserialize<MediaQueueEntry>(Convert.FromBase64String(req.Message.Data), entrySerializerOptions);
+                req = (await JsonSerializer.DeserializeAsync(context.Request.Body, MediaSerializerContext.Default.PubSubRequest, context.RequestAborted))
+                    ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request.");
+                entry = (JsonSerializer.Deserialize<MediaQueueEntry>(Convert.FromBase64String(req.Message.Data), entrySerializerOptions))
+                    ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
             }
             catch (Exception exn)
             {
