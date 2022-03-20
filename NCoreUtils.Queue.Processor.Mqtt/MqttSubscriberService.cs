@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -47,15 +48,17 @@ namespace NCoreUtils.Queue
             _serviceOptions = serviceOptions ?? throw new ArgumentNullException(nameof(serviceOptions));
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "JSON serialization using explicit converter.")]
         public async Task HandleApplicationMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs eventArgs)
         {
             try
             {
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug("Received payload: {{ {0} }}.", string.Join(", ", eventArgs.ApplicationMessage.Payload.Select(b => "0x" + b.ToString("X2"))));
-                }
-                var entry = JsonSerializer.Deserialize<MediaQueueEntry>(eventArgs.ApplicationMessage.Payload, _serviceOptions.JsonSerializerOptions);
+                // if (_logger.IsEnabled(LogLevel.Debug))
+                // {
+                //     _logger.LogDebug("Received payload: {{ {0} }}.", string.Join(", ", eventArgs.ApplicationMessage.Payload.Select(b => "0x" + b.ToString("X2"))));
+                // }
+                var entry = JsonSerializer.Deserialize<MediaQueueEntry>(eventArgs.ApplicationMessage.Payload, _serviceOptions.JsonSerializerOptions)
+                    ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
                 var status = await _processor.ProcessAsync(entry, "<none>", CancellationToken.None);
                 eventArgs.ProcessingFailed = status >= 400;
             }

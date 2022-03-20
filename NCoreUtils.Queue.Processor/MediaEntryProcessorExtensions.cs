@@ -25,7 +25,7 @@ namespace NCoreUtils.Queue
             {
                 req = (await JsonSerializer.DeserializeAsync(context.Request.Body, MediaSerializerContext.Default.PubSubRequest, context.RequestAborted))
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request.");
-                entry = (JsonSerializer.Deserialize<MediaQueueEntry>(Convert.FromBase64String(req.Message.Data), entrySerializerOptions))
+                entry = JsonSerializer.Deserialize<MediaQueueEntry>(Convert.FromBase64String(req.Message.Data), entrySerializerOptions)
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
             }
             catch (Exception exn)

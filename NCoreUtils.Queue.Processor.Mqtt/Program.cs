@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,11 +36,23 @@ namespace NCoreUtils.Queue
             CreateHostBuilder(args).Build().Run();
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "MqttClientConfiguration preserved explicitely")]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(MqttClientConfiguration))]
+        private static MqttClientConfiguration GetMqttClientConfiguration(IConfiguration configuration)
+            => configuration.GetSection("Mqtt:Client").Get<MqttClientConfiguration>() ?? new MqttClientConfiguration();
+
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "MqttClientConfiguration preserved explicitely")]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(MqttClientServiceOptions))]
+        private static void BindMqttClientServiceOptions(IConfiguration configuration, MqttClientServiceOptions options)
+            => configuration.GetSection("Mqtt").Bind(options);
+
+#pragma warning disable IDE0060
         public static IHostBuilder CreateHostBuilder(string[] args)
+#pragma warning restore IDE0060
         {
             var configuration = CreateConfiguration();
             // MQTT client options
-            var mqttConfig = configuration.GetSection("Mqtt:Client").Get<MqttClientConfiguration>() ?? new MqttClientConfiguration();
+            var mqttConfig = GetMqttClientConfiguration(configuration);
             var mqttClientOptions =
                 new MqttClientOptionsBuilder()
                     .WithTcpServer(mqttConfig.Host ?? throw new InvalidOperationException("No MQTT host supplied."), mqttConfig.Port)
@@ -68,7 +81,7 @@ namespace NCoreUtils.Queue
                         .AddSingleton<IMqttClientServiceOptions>(serviceProvider =>
                         {
                             var options = ActivatorUtilities.CreateInstance<MqttClientServiceOptions>(serviceProvider);
-                            configuration.GetSection("Mqtt").Bind(options);
+                            BindMqttClientServiceOptions(configuration, options);
                             return options;
                         })
                         .AddSingleton(mqttClientOptions)
