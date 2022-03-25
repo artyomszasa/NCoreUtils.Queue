@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,7 @@ namespace NCoreUtils.Queue
 {
     public class MqttClientService : IMqttClientService
     {
-        private readonly SemaphoreSlim _sync = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim _sync = new(1);
 
         private readonly ILogger<MqttClientService> _logger;
 
@@ -41,7 +42,7 @@ namespace NCoreUtils.Queue
         public Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
         {
             _logger.LogDebug(
-                "MQTT client created and connected successfully (result code = {0}, response = {1}).",
+                "MQTT client created and connected successfully (result code = {ResultCode}, response = {ResponseInformation}).",
                 eventArgs.AuthenticateResult.ResultCode,
                 eventArgs.AuthenticateResult.ResponseInformation
             );
@@ -53,9 +54,9 @@ namespace NCoreUtils.Queue
         {
             _connected = false;
             Interlocked.MemoryBarrierProcessWide();
-            if (!(_client is null) && eventArgs.ReasonCode != MqttClientDisconnectReason.AdministrativeAction && !_connected)
+            if (_client is not null && eventArgs.ReasonCode != MqttClientDisconnectReason.AdministrativeAction && !_connected)
             {
-                _logger.LogWarning(eventArgs.Exception, "MQTT client has deisconnected, reason: {0}, trying to reconnect.", eventArgs.ReasonCode);
+                _logger.LogWarning(eventArgs.Exception, "MQTT client has deisconnected, reason: {ReasonCode}, trying to reconnect.", eventArgs.ReasonCode);
                 await _client.ConnectAsync(_clientOptions, CancellationToken.None);
             }
         }
@@ -127,7 +128,13 @@ namespace NCoreUtils.Queue
                 int size;
                 using (var stream = new MemoryStream(buffer, 0, buffer.Length, true, true))
                 {
-                    await JsonSerializer.SerializeAsync(stream, payload, _serviceOptions.JsonSerializerOptions, cancellationToken);
+                    var typeInfo = _serviceOptions.JsonSerializerContext switch
+                    {
+                        null => throw new InvalidOperationException($"No json type info for {typeof(T)} found in the serializer context."),
+                        JsonTypeInfo<T> jti => jti,
+                        _ => throw new InvalidOperationException($"Invalid json type info for {typeof(T)} found in the serializer context."),
+                    };
+                    await JsonSerializer.SerializeAsync(stream, payload, typeInfo, cancellationToken);
                     stream.Flush();
                     unchecked
                     {

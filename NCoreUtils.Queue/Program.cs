@@ -79,10 +79,7 @@ namespace NCoreUtils.Queue
                         builder.Services
                             .AddDefaultTraceIdProvider()
                             .AddLoggingContext();
-                        builder.AddGoogleFluentd<AspNetCoreLoggerProvider>(projectId: configuration["Google:ProjectId"], configureOptions: o =>
-                        {
-                            o.Configuration.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                        });
+                        builder.AddGoogleFluentd<AspNetCoreLoggerProvider>(projectId: configuration["Google:ProjectId"]);
                     }
                 })
                 .ConfigureWebHost(webBuilder =>

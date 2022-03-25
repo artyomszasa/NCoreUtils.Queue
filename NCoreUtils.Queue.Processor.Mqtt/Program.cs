@@ -14,15 +14,6 @@ namespace NCoreUtils.Queue
 {
     class Program
     {
-        private sealed class ConfigureJson : IConfigureOptions<JsonSerializerOptions>
-        {
-            public void Configure(JsonSerializerOptions options)
-            {
-                options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                options.Converters.Add(MediaQueueEntryConverter.Instance);
-            }
-        }
-
         private static IConfiguration CreateConfiguration()
             => new ConfigurationBuilder()
                 .SetBasePath(Environment.CurrentDirectory)
@@ -73,14 +64,10 @@ namespace NCoreUtils.Queue
                     services
                         // HTTP client
                         .AddHttpClient()
-                        // JSON serialization
-                        .AddOptions<JsonSerializerOptions>().Services
-                        .ConfigureOptions<ConfigureJson>()
-                        .AddTransient(serviceProvider => serviceProvider.GetRequiredService<IOptionsMonitor<JsonSerializerOptions>>().CurrentValue)
                         // MQTT client
                         .AddSingleton<IMqttClientServiceOptions>(serviceProvider =>
                         {
-                            var options = ActivatorUtilities.CreateInstance<MqttClientServiceOptions>(serviceProvider);
+                            var options = new MqttClientServiceOptions();
                             BindMqttClientServiceOptions(configuration, options);
                             return options;
                         })

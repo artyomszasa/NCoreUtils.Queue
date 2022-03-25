@@ -11,7 +11,7 @@ namespace NCoreUtils.Queue
     {
         private sealed class SyncGuard
         {
-            private readonly List<(MediaQueueEntry Entry, Exception Error)> _entries = new List<(MediaQueueEntry Entry, Exception Error)>();
+            private readonly List<(MediaQueueEntry Entry, Exception Error)> _entries = new();
 
             public IReadOnlyList<(MediaQueueEntry Entry, Exception Error)> Entries => _entries;
 

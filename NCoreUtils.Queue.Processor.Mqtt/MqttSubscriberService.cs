@@ -13,6 +13,7 @@ using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Receiving;
 using MQTTnet.Client.Subscribing;
+using NCoreUtils.Queue.Internal;
 
 namespace NCoreUtils.Queue
 {
@@ -22,7 +23,7 @@ namespace NCoreUtils.Queue
         , IMqttClientDisconnectedHandler
         , IMqttApplicationMessageReceivedHandler
     {
-        private readonly SemaphoreSlim _sync = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim _sync = new(1);
 
         private readonly MediaEntryProcessor _processor;
 
@@ -57,7 +58,7 @@ namespace NCoreUtils.Queue
                 // {
                 //     _logger.LogDebug("Received payload: {{ {0} }}.", string.Join(", ", eventArgs.ApplicationMessage.Payload.Select(b => "0x" + b.ToString("X2"))));
                 // }
-                var entry = JsonSerializer.Deserialize<MediaQueueEntry>(eventArgs.ApplicationMessage.Payload, _serviceOptions.JsonSerializerOptions)
+                var entry = JsonSerializer.Deserialize(eventArgs.ApplicationMessage.Payload, MediaProcessingQueueSerializerContext.Default.MediaQueueEntry)
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
                 var status = await _processor.ProcessAsync(entry, "<none>", CancellationToken.None);
                 eventArgs.ProcessingFailed = status >= 400;
@@ -77,7 +78,7 @@ namespace NCoreUtils.Queue
         public async Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
         {
             _logger.LogDebug(
-                "MQTT client created and connected successfully (result code = {0}, response = {1}).",
+                "MQTT client created and connected successfully (result code = {ResultCode}, response = {ResponseInformation}).",
                 eventArgs.AuthenticateResult.ResultCode,
                 eventArgs.AuthenticateResult.ResponseInformation
             );
@@ -91,7 +92,7 @@ namespace NCoreUtils.Queue
                 }
             });
             _logger.LogDebug(
-                "MQTT client successfully subscribed to topic {0}.",
+                "MQTT client successfully subscribed to topic {Topic}.",
                 _serviceOptions.Topic
             );
             _connected = true;
@@ -103,7 +104,7 @@ namespace NCoreUtils.Queue
             Interlocked.MemoryBarrierProcessWide();
             if (!(_client is null) && eventArgs.ReasonCode != MqttClientDisconnectReason.AdministrativeAction && !_connected)
             {
-                _logger.LogWarning(eventArgs.Exception, "MQTT client has disconnected, reason: {0}, trying to reconnect.", eventArgs.ReasonCode);
+                _logger.LogWarning(eventArgs.Exception, "MQTT client has disconnected, reason: {ReasonCode}, trying to reconnect.", eventArgs.ReasonCode);
                 await DoConnectAsync(_client, CancellationToken.None);
             }
         }

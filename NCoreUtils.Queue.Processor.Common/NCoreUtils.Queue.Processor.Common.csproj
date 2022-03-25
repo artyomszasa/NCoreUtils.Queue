@@ -1,20 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.16" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-  </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
     <PackageReference Include="NCoreUtils.Images.Abstractions" Version="6.0.0-alpha12" />
     <PackageReference Include="NCoreUtils.Images.GoogleCloudStorage" Version="6.0.0-alpha12" />
     <PackageReference Include="NCoreUtils.Images.FileSystem" Version="6.0.0-alpha12" />

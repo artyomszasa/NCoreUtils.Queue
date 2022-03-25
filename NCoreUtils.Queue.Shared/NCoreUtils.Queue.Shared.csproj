@@ -1,23 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.1;netstandard2.0</TargetFrameworks>
-    <LangVersion>10.0</LangVersion>
-    <Nullable>enable</Nullable>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>NCoreUtils.Queue</RootNamespace>
-    <Version>6.0.0-alpha00</Version>
+    <Trimmable>true</Trimmable>
   </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
-  </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Abstractions" Version="3.1.0" />
-    <PackageReference Include="NCoreUtils.Extensions.Json" Version="1.0.2" />
+    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Abstractions" Version="6.0.0-beta01" />
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    <PackageReference Include="System.Text.Json" Version="6.0.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Abstractions\NCoreUtils.Queue.Abstractions.csproj" />

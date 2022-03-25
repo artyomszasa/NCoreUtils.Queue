@@ -9,11 +9,7 @@ namespace NCoreUtils.Queue.Internal
             => builder
                 .SetPath(path ?? string.Empty)
                 .SetNamingPolicy(NamingConvention.SnakeCase)
-                .SetDefaultInputType(InputType.Json(new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    Converters = { MediaQueueEntryConverter.Instance }
-                }));
+                .SetDefaultInputType(InputType.Json<DefaultMediaProcessingQueueSerializerContext>());
 
         public static void Configure(ServiceDescriptorBuilder builder)
             => Configure(builder, default);

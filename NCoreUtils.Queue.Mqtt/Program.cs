@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NCoreUtils.AspNetCore;
+using NCoreUtils.Logging;
 
 namespace NCoreUtils.Queue.Mqtt
 {
@@ -75,7 +75,10 @@ namespace NCoreUtils.Queue.Mqtt
                     }
                     else
                     {
-                        builder.AddGoogleFluentdSink(projectId: configuration["Google:ProjectId"]);
+                        builder.Services
+                            .AddDefaultTraceIdProvider()
+                            .AddLoggingContext();
+                        builder.AddGoogleFluentd<AspNetCoreLoggerProvider>(projectId: configuration["Google:ProjectId"]);
                     }
                 })
                 .ConfigureWebHost(webBuilder =>

@@ -10,13 +10,6 @@ namespace NCoreUtils.Queue
 {
     public static class MediaEntryProcessorExtensions
     {
-        static private readonly JsonSerializerOptions entrySerializerOptions = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters = { MediaQueueEntryConverter.Instance }
-        };
-
-        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "JSON serialization using explicit converter.")]
         public static async Task ProcessRequestAsync(this MediaEntryProcessor processor, HttpContext context)
         {
             PubSubRequest req;
@@ -25,7 +18,7 @@ namespace NCoreUtils.Queue
             {
                 req = (await JsonSerializer.DeserializeAsync(context.Request.Body, MediaSerializerContext.Default.PubSubRequest, context.RequestAborted))
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request.");
-                entry = JsonSerializer.Deserialize<MediaQueueEntry>(Convert.FromBase64String(req.Message.Data), entrySerializerOptions)
+                entry = JsonSerializer.Deserialize(Convert.FromBase64String(req.Message.Data), MediaProcessingQueueSerializerContext.Default.MediaQueueEntry)
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
             }
             catch (Exception exn)

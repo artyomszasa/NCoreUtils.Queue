@@ -47,23 +47,15 @@ namespace NCoreUtils.Queue
             TargetType = targetType;
         }
 
-        #if NETSTANDARD2_1
         private bool TryToStringNoAlloc([NotNullWhen(true)] out string? result)
-        #else
-        private bool TryToStringNoAlloc( out string result)
-        #endif
         {
             Span<char> buffer = stackalloc char[8 * 1024];
             if (TryEmplace(buffer, out var size))
             {
-                result = buffer.Slice(0, size).ToString();
+                result = buffer[..size].ToString();
                 return true;
             }
-            #if NETSTANDARD2_1
             result = default;
-            #else
-            result = default!;
-            #endif
             return false;
         }
 

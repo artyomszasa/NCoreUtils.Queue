@@ -22,7 +22,20 @@ namespace NCoreUtils
             IConfiguration configuration)
         {
             var config = new EndpointConfiguration();
-            configuration.Bind(config);
+            // configuration.Bind(config);
+            if (configuration is IConfigurationSection section)
+            {
+                var httpClient = section[nameof(EndpointConfiguration.HttpClient)];
+                var endpoint = section[nameof(EndpointConfiguration.Endpoint)];
+                if (!string.IsNullOrEmpty(httpClient))
+                {
+                    config.HttpClient = httpClient;
+                }
+                if (!string.IsNullOrEmpty(endpoint))
+                {
+                    config.Endpoint = endpoint;
+                }
+            }
             return services.AddMediaProcessingQueueClient(config);
         }
 

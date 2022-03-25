@@ -52,11 +52,6 @@ namespace NCoreUtils.Queue
                     .WithOrigins("https://example.com", "http://127.0.0.1")
                     .SetIsOriginAllowed(_ => true)
                 ))
-                .AddSingleton(new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    Converters = { MediaQueueEntryConverter.Instance }
-                })
                 .AddRouting();
         }
 

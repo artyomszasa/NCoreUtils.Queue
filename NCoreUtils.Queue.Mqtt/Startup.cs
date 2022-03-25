@@ -15,15 +15,6 @@ namespace NCoreUtils.Queue.Mqtt
 {
     public class Startup
     {
-        private sealed class ConfigureJson : IConfigureOptions<JsonSerializerOptions>
-        {
-            public void Configure(JsonSerializerOptions options)
-            {
-                options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                options.Converters.Add(MediaQueueEntryConverter.Instance);
-            }
-        }
-
         static ForwardedHeadersOptions ConfigureForwardedHeaders()
         {
             var opts = new ForwardedHeadersOptions();
@@ -56,14 +47,10 @@ namespace NCoreUtils.Queue.Mqtt
             services
                 // HTTP context
                 .AddHttpContextAccessor()
-                // JSON serialization
-                .AddOptions<JsonSerializerOptions>().Services
-                .ConfigureOptions<ConfigureJson>()
-                .AddTransient(serviceProvider => serviceProvider.GetRequiredService<IOptionsMonitor<JsonSerializerOptions>>().CurrentValue)
                 // MQTT client
                 .AddSingleton<IMqttClientServiceOptions>(serviceProvider =>
                 {
-                    var options = ActivatorUtilities.CreateInstance<MqttClientServiceOptions>(serviceProvider);
+                    var options = new MqttClientServiceOptions(MediaProcessingQueueSerializerContext.Default);
                     _configuration.GetSection("Mqtt").Bind(options);
                     return options;
                 })

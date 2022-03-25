@@ -1,15 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
-    <LangVersion>8.0</LangVersion>
-    <Nullable>enable</Nullable>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>NCoreUtils</RootNamespace>
-    <Version>3.1.0-beta00</Version>
+    <Trimmable>true</Trimmable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Client" Version="3.1.0" />
+    <PackageReference Include="NCoreUtils.AspNetCore.Proto.Client" Version="6.0.0-beta01" />
   </ItemGroup>
 </Project>
