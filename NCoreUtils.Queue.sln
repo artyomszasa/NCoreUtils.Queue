@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCoreUtils.Queue.Mqtt", "NC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCoreUtils.Queue.Processor.Mqtt", "NCoreUtils.Queue.Processor.Mqtt\NCoreUtils.Queue.Processor.Mqtt.csproj", "{BF88357D-2A68-463C-9E7F-C9F7DDC55BAB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCoreUtils.Queue.Processor.PubSubPull", "NCoreUtils.Queue.Processor.PubSubPull\NCoreUtils.Queue.Processor.PubSubPull.csproj", "{3042FBC6-A96A-45AE-92BA-7858CC0441E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,5 +116,17 @@ Global
 		{BF88357D-2A68-463C-9E7F-C9F7DDC55BAB}.Release|x64.Build.0 = Release|Any CPU
 		{BF88357D-2A68-463C-9E7F-C9F7DDC55BAB}.Release|x86.ActiveCfg = Release|Any CPU
 		{BF88357D-2A68-463C-9E7F-C9F7DDC55BAB}.Release|x86.Build.0 = Release|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Debug|x64.Build.0 = Debug|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Debug|x86.Build.0 = Debug|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Release|x64.ActiveCfg = Release|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Release|x64.Build.0 = Release|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Release|x86.ActiveCfg = Release|Any CPU
+		{3042FBC6-A96A-45AE-92BA-7858CC0441E0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
