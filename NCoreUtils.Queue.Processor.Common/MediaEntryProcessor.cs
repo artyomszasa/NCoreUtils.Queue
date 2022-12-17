@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 // using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NCoreUtils.Images;
-using NCoreUtils.Queue.Internal;
+using NCoreUtils.Resources;
 
 namespace NCoreUtils.Queue
 {
@@ -30,26 +30,29 @@ namespace NCoreUtils.Queue
 
         public ILogger Logger { get; }
 
-        private readonly IImageResizer _imageResizer;
+        private IImageResizer ImageResizer { get; }
 
-        private readonly IVideoResizer _videoResizer;
+        private GoogleCloudStorageUtils GoogleCloudStorageUtils { get; }
 
-        public MediaEntryProcessor(ILogger<MediaEntryProcessor> logger, IImageResizer imageResizer, IVideoResizer videoResizer)
+        //private readonly IVideoResizer _videoResizer;
+
+        public MediaEntryProcessor(
+            ILogger<MediaEntryProcessor> logger,
+            IImageResizer imageResizer,
+            //IVideoResizer videoResizer,
+            GoogleCloudStorageUtils googleCloudStorageUtils)
         {
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _imageResizer = imageResizer ?? throw new ArgumentNullException(nameof(imageResizer));
-            _videoResizer = videoResizer ?? throw new ArgumentNullException(nameof(videoResizer));
+            ImageResizer = imageResizer ?? throw new ArgumentNullException(nameof(imageResizer));
+            // _videoResizer = videoResizer ?? throw new ArgumentNullException(nameof(videoResizer));
+            GoogleCloudStorageUtils = googleCloudStorageUtils ?? throw new ArgumentNullException(nameof(googleCloudStorageUtils));
         }
 
-        /*
-
-        */
-
-        protected virtual Either<IImageSource, string> ResolveSource(string? source, string messageId)
+        protected virtual Either<IReadableResource, string> ResolveSource(string? source, string messageId)
         {
             if (source is null)
             {
-                return new Either<IImageSource, string>.Right($"Failed to process entry: missing or invalid source uri = {source}. [messageId = {messageId}]");
+                return new Either<IReadableResource, string>.Right($"Failed to process entry: missing or invalid source uri = {source}. [messageId = {messageId}]");
             }
             if (source.StartsWith("/"))
             {
@@ -57,24 +60,28 @@ namespace NCoreUtils.Queue
             }
             if (!Uri.TryCreate(source, UriKind.Absolute, out var sourceUri))
             {
-                return new Either<IImageSource, string>.Right($"Failed to process entry: missing or invalid source uri = {source}. [messageId = {messageId}]");
+                return new Either<IReadableResource, string>.Right($"Failed to process entry: missing or invalid source uri = {source}. [messageId = {messageId}]");
             }
             if (sourceUri.Scheme == "gs")
             {
-                return new Either<IImageSource, string>.Left(new GoogleCloudStorageSource(sourceUri));
+                return new Either<IReadableResource, string>.Left(new GoogleCloudStorageResource(
+                    GoogleCloudStorageUtils,
+                    sourceUri.Host,
+                    sourceUri.AbsolutePath.Trim('/'))
+                );
             }
             if (sourceUri.Scheme == "file")
             {
-                return new Either<IImageSource, string>.Left(new FileSystemSource(sourceUri.AbsolutePath));
+                return new Either<IReadableResource, string>.Left(new FileSystemResource(sourceUri.AbsolutePath, default));
             }
-            return new Either<IImageSource, string>.Right($"Failed to process entry: unsupported source uri = {source}. [messageId = {messageId}]");
+            return new Either<IReadableResource, string>.Right($"Failed to process entry: unsupported source uri = {source}. [messageId = {messageId}]");
         }
 
-        protected virtual Either<IImageDestination, string> ResolveDestination(string? destination, string messageId)
+        protected virtual Either<IWritableResource, string> ResolveDestination(string? destination, string messageId)
         {
             if (destination is null)
             {
-                return new Either<IImageDestination, string>.Right($"Failed to process entry: missing or invalid destination uri = {destination}. [messageId = {messageId}]");
+                return new Either<IWritableResource, string>.Right($"Failed to process entry: missing or invalid destination uri = {destination}. [messageId = {messageId}]");
             }
             if (destination.StartsWith("/"))
             {
@@ -82,48 +89,54 @@ namespace NCoreUtils.Queue
             }
             if (!Uri.TryCreate(destination, UriKind.Absolute, out var destinationUri))
             {
-                return new Either<IImageDestination, string>.Right($"Failed to process entry: missing or invalid destination uri = {destination}. [messageId = {messageId}]");
+                return new Either<IWritableResource, string>.Right($"Failed to process entry: missing or invalid destination uri = {destination}. [messageId = {messageId}]");
             }
             if (destinationUri.Scheme == "gs")
             {
-                return new Either<IImageDestination, string>.Left(new GoogleCloudStorageDestination(destinationUri, isPublic: true, cacheControl: "private, max-age=31536000"));
+                return new Either<IWritableResource, string>.Left(new GoogleCloudStorageResource(
+                    GoogleCloudStorageUtils,
+                    destinationUri.Host,
+                    destinationUri.AbsolutePath.Trim('/'),
+                    isPublic: true,
+                    cacheControl: "private, max-age=31536000"
+                ));
             }
             if (destinationUri.Scheme == "file")
             {
-                return new Either<IImageDestination, string>.Left(new FileSystemDestination(destinationUri.AbsolutePath));
+                return new Either<IWritableResource, string>.Left(new FileSystemResource(destinationUri.AbsolutePath, default));
             }
-            return new Either<IImageDestination, string>.Right($"Failed to process entry: unsupported destination uri = {destination}. [messageId = {messageId}]");
+            return new Either<IWritableResource, string>.Right($"Failed to process entry: unsupported destination uri = {destination}. [messageId = {messageId}]");
         }
 
         public async Task<int> ProcessImageAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
         {
-            IImageSource source;
-            IImageDestination destination;
+            IReadableResource source;
+            IWritableResource destination;
             switch (ResolveSource(entry.Source, messageId))
             {
-                case Either<IImageSource, string>.Left l:
+                case Either<IReadableResource, string>.Left l:
                     source = l.Value;
                     break;
-                case Either<IImageSource, string>.Right r:
-                    Logger.LogError(r.Value);
+                case Either<IReadableResource, string>.Right r:
+                    Logger.LogError("Failed to resolve source: {Message}.", r.Value);
                     return 204; // Message should not be retried...
                 default:
                     throw new InvalidOperationException("Should never happen");
             }
             switch (ResolveDestination(entry.Target, messageId))
             {
-                case Either<IImageDestination, string>.Left l:
+                case Either<IWritableResource, string>.Left l:
                     destination = l.Value;
                     break;
-                case Either<IImageDestination, string>.Right r:
-                    Logger.LogError(r.Value);
+                case Either<IWritableResource, string>.Right r:
+                    Logger.LogError("Failed to resolve target: {Message}.", r.Value);
                     return 204; // Message should not be retried...
                 default:
                     throw new InvalidOperationException("Should never happen");
             }
             try
             {
-                await _imageResizer.ResizeAsync(
+                await ImageResizer.ResizeAsync(
                     source,
                     destination,
                     new ResizeOptions(
@@ -139,27 +152,28 @@ namespace NCoreUtils.Queue
             }
             catch (InvalidImageException exn)
             {
-                Logger.LogError(exn, $"Failed to process image entry. [messageId = {messageId}]");
+                Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
                 return 204; // Message should not be retried...
             }
             catch (UnsupportedImageTypeException exn)
             {
-                Logger.LogError(exn, $"Failed to process image entry. [messageId = {messageId}]");
+                Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
                 return 204; // Message should not be retried...
             }
             catch (UnsupportedResizeModeException exn)
             {
-                Logger.LogError(exn, $"Failed to process image entry. [messageId = {messageId}]");
+                Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
                 return 204; // Message should not be retried...
             }
             catch (Exception exn)
             {
-                Logger.LogError(exn, $"Failed to process image entry, operation may be retried. [messageId = {messageId}]");
+                Logger.LogError(exn, "Failed to process image entry, operation may be retried. [messageId = {MessageId}]", messageId);
                 return 400; // Message should be retried...
             }
             return 200;
         }
 
+        /*
         public async Task<int> ProcessVideoAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
         {
             if (!Uri.TryCreate(entry.Source, UriKind.Absolute, out var sourceUri))
@@ -235,23 +249,26 @@ namespace NCoreUtils.Queue
                 return 204; // Message should not be retried...
             }
         }
+        */
 
         public ValueTask<int> ProcessAsync(MediaQueueEntry entry, string messageId, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(entry.EntryType))
             {
-                Logger.LogError($"Failed to process entry: missing entry type. [messageId = {messageId}]");
+                Logger.LogError("Failed to process entry: missing entry type. [messageId = {MessageId}].", messageId);
                 return new ValueTask<int>(204); // Message should not be retried...
             }
             if (StringComparer.InvariantCultureIgnoreCase.Equals(entry.EntryType, MediaQueueEntryTypes.Image))
             {
                 return new ValueTask<int>(ProcessImageAsync(entry, messageId, cancellationToken));
             }
+            /*
             if (StringComparer.InvariantCultureIgnoreCase.Equals(entry.EntryType, MediaQueueEntryTypes.Video))
             {
                 return new ValueTask<int>(ProcessVideoAsync(entry, messageId, cancellationToken));
             }
-            Logger.LogError($"Failed to process entry: unsupported entry type = {entry.EntryType}. [messageId = {messageId}]");
+            */
+            Logger.LogError("Failed to process entry: unsupported entry type = {EntryType}. [messageId = {MessageId}].", entry.EntryType, messageId);
             return new ValueTask<int>(204); // Message should not be retried...
         }
     }

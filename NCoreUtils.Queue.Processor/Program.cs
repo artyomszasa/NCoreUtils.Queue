@@ -27,7 +27,7 @@ namespace NCoreUtils.Queue.Processor
             }
             else
             {
-                return new IPEndPoint(IPAddress.Parse(input.Substring(0, portIndex)), int.Parse(input.Substring(portIndex + 1)));
+                return new IPEndPoint(IPAddress.Parse(input.AsSpan(0, portIndex)), int.Parse(input.AsSpan(portIndex + 1)));
             }
         }
 

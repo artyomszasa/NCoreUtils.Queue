@@ -1,12 +1,3 @@
-using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Options;
+namespace NCoreUtils.Queue;
 
-namespace NCoreUtils.Queue
-{
-    public class MqttClientServiceOptions : IMqttClientServiceOptions
-    {
-        public string Topic { get; set; } = default!;
-    }
-}
+public record MqttClientServiceOptions(string Topic) : IMqttClientServiceOptions;

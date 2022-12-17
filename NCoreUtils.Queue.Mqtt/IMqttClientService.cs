@@ -1,13 +1,11 @@
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using MQTTnet.Client.Connecting;
-using MQTTnet.Client.Disconnecting;
 
-namespace NCoreUtils.Queue
+namespace NCoreUtils.Queue;
+
+public interface IMqttClientService : IHostedService
 {
-    public interface IMqttClientService : IHostedService, IMqttClientConnectedHandler, IMqttClientDisconnectedHandler
-    {
-        Task<int?> PublishAsync<T>(T payload, CancellationToken cancellationToken);
-    }
+    Task<int?> PublishAsync<T>(T payload, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken);
 }

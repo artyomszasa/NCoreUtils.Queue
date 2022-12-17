@@ -1,29 +1,16 @@
 using System;
-using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using MQTTnet.Client.Options;
+using MQTTnet.Client;
 using NCoreUtils.AspNetCore;
-using NCoreUtils.Queue.Internal;
 
 namespace NCoreUtils.Queue.Mqtt
 {
     public class Startup
     {
-        static ForwardedHeadersOptions ConfigureForwardedHeaders()
-        {
-            var opts = new ForwardedHeadersOptions();
-            opts.KnownNetworks.Clear();
-            opts.KnownProxies.Clear();
-            opts.ForwardedHeaders = ForwardedHeaders.All;
-            return opts;
-        }
-
         private readonly IConfiguration _configuration;
 
         private readonly IWebHostEnvironment _env;
@@ -37,23 +24,17 @@ namespace NCoreUtils.Queue.Mqtt
         public void ConfigureServices(IServiceCollection services)
         {
             // MQTT client options
-            var mqttConfig = _configuration.GetSection("Mqtt:Client").Get<MqttClientConfiguration>() ?? new MqttClientConfiguration();
-            var mqttClientOptions =
-                new MqttClientOptionsBuilder()
-                    .WithTcpServer(mqttConfig.Host ?? throw new InvalidOperationException("No MQTT host supplied."), mqttConfig.Port)
-                    .WithCleanSession(mqttConfig.CleanSession ?? true)
-                    .Build();
+            var mqttConfig = _configuration.GetRequiredSection("Mqtt:Client").GetMqttClientConfiguration();
+            var mqttClientOptions = new MqttClientOptionsBuilder()
+                .WithTcpServer(mqttConfig.Host ?? throw new InvalidOperationException("No MQTT host supplied."), mqttConfig.Port)
+                .WithCleanSession(mqttConfig.CleanSession ?? true)
+                .Build();
 
             services
                 // HTTP context
                 .AddHttpContextAccessor()
                 // MQTT client
-                .AddSingleton<IMqttClientServiceOptions>(serviceProvider =>
-                {
-                    var options = new MqttClientServiceOptions(MediaProcessingQueueSerializerContext.Default);
-                    _configuration.GetSection("Mqtt").Bind(options);
-                    return options;
-                })
+                .AddSingleton<IMqttClientServiceOptions>(_configuration.GetRequiredSection("Mqtt").GetMqttClientServiceOptions())
                 .AddSingleton(mqttClientOptions)
                 .AddSingleton<IMqttClientService, MqttClientService>()
                 .AddHostedService(serviceProvider => serviceProvider.GetRequiredService<IMqttClientService>())
@@ -74,23 +55,23 @@ namespace NCoreUtils.Queue.Mqtt
 
         public void Configure(IApplicationBuilder app)
         {
-            #if DEBUG
+#if DEBUG
             if (_env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            #endif
+#endif
 
             app
-                .UseForwardedHeaders(ConfigureForwardedHeaders())
-                #if !DEBUG
+                .UseForwardedHeaders(_configuration.GetSection("ForwardedHeaders"))
+#if !DEBUG
                 .UsePrePopulateLoggingContext()
-                #endif
+#endif
                 .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {
-                    endpoints.MapProto<IMediaProcessingQueue>(MediaProcessingQueueProtoConfiguration.Configure);
+                    endpoints.MapMediaProcessingQueue();
                 });
         }
     }

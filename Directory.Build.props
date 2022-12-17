@@ -2,6 +2,10 @@
   <PropertyGroup>
     <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
-    <Version>6.0.0-beta03</Version>
+    <Version>7.0.0-rc00</Version>
+    <ProtoVersion>6.0.0-rc08</ProtoVersion>
+    <IsTrimmable>true</IsTrimmable>
+    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
 </Project>

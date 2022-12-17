@@ -1,12 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+namespace NCoreUtils.Queue;
 
-namespace NCoreUtils.Queue
+public interface IMqttClientServiceOptions
 {
-    public interface IMqttClientServiceOptions
-    {
-        JsonSerializerContext JsonSerializerContext { get; }
-
-        string Topic { get; }
-    }
+    string Topic { get; }
 }

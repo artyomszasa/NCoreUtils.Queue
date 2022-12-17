@@ -1,10 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NCoreUtils.Queue
+namespace NCoreUtils.Queue;
+
+public interface IMediaProcessingQueue
 {
-    public interface IMediaProcessingQueue
-    {
-        Task EnqueueAsync(MediaQueueEntry entry, CancellationToken cancellationToken = default);
-    }
+    Task EnqueueAsync(MediaQueueEntry entry, CancellationToken cancellationToken = default);
 }

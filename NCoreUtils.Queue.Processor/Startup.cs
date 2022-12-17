@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NCoreUtils.Logging;
 using NCoreUtils.Images;
 
 namespace NCoreUtils.Queue.Processor
@@ -36,8 +35,9 @@ namespace NCoreUtils.Queue.Processor
             services
                 .AddHttpContextAccessor()
                 .AddHttpClient()
+                .AddGoogleCloudStorageUtils()
                 .AddImageResizerClient(_configuration.GetSection("Images"))
-                .AddVideoResizerClient(_configuration.GetSection("Videos"))
+                // .AddVideoResizerClient(_configuration.GetSection("Videos"))
                 .AddSingleton<MediaEntryProcessor>()
                 .AddCors(b => b.AddDefaultPolicy(opts => opts
                     .AllowAnyHeader()
@@ -50,20 +50,20 @@ namespace NCoreUtils.Queue.Processor
                 .AddRouting();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
-            #if DEBUG
-            if (env.IsDevelopment())
+#if DEBUG
+            if (_env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            #endif
+#endif
 
             app
                 .UseForwardedHeaders(ConfigureForwardedHeaders())
-                #if !DEBUG
+#if !DEBUG
                 .UsePrePopulateLoggingContext()
-                #endif
+#endif
                 .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>

@@ -12,21 +12,11 @@ using NCoreUtils.AspNetCore;
 #if !DEBUG
 using NCoreUtils.Logging;
 #endif
-using NCoreUtils.Queue.Internal;
 
 namespace NCoreUtils.Queue
 {
     public class Startup
     {
-        static ForwardedHeadersOptions ConfigureForwardedHeaders()
-        {
-            var opts = new ForwardedHeadersOptions();
-            opts.KnownNetworks.Clear();
-            opts.KnownProxies.Clear();
-            opts.ForwardedHeaders = ForwardedHeaders.All;
-            return opts;
-        }
-
         private readonly IConfiguration _configuration;
 
         private readonly IWebHostEnvironment _env;
@@ -65,7 +55,7 @@ namespace NCoreUtils.Queue
             #endif
 
             app
-                .UseForwardedHeaders(ConfigureForwardedHeaders())
+                .UseForwardedHeaders(_configuration.GetSection("ForwardedHeaders"))
                 #if !DEBUG
                 .UsePrePopulateLoggingContext()
                 #endif
@@ -82,7 +72,7 @@ namespace NCoreUtils.Queue
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {
-                    endpoints.MapProto<IMediaProcessingQueue>(MediaProcessingQueueProtoConfiguration.Configure);
+                    endpoints.MapMediaProcessingQueue();
                 });
         }
     }

@@ -1,13 +1,8 @@
-namespace NCoreUtils.Queue
-{
-    public class MqttClientConfiguration
-    {
-        public string? Host { get; set; }
+namespace NCoreUtils.Queue;
 
-        public int? Port { get; set; }
-
-        public bool? CleanSession { get; set; }
-
-        public string? ClientId { get; set; }
-    }
-}
+public record MqttClientConfiguration(
+    string? Host,
+    int? Port,
+    bool? CleanSession,
+    string? ClientId
+);

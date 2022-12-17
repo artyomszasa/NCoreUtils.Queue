@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using NCoreUtils.Queue.Internal;
 
 namespace NCoreUtils.Queue
 {
@@ -16,7 +15,7 @@ namespace NCoreUtils.Queue
             MediaQueueEntry entry;
             try
             {
-                req = (await JsonSerializer.DeserializeAsync(context.Request.Body, MediaSerializerContext.Default.PubSubRequest, context.RequestAborted))
+                req = (await JsonSerializer.DeserializeAsync(context.Request.Body, PubSubSerializerContext.Default.PubSubRequest, context.RequestAborted).ConfigureAwait(false))
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request.");
                 entry = JsonSerializer.Deserialize(Convert.FromBase64String(req.Message.Data), MediaProcessingQueueSerializerContext.Default.MediaQueueEntry)
                     ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
@@ -27,7 +26,7 @@ namespace NCoreUtils.Queue
                 context.Response.StatusCode = 204; // Message should not be retried...
                 return;
             }
-            context.Response.StatusCode = await processor.ProcessAsync(entry, req.Message.MessageId, context.RequestAborted);
+            context.Response.StatusCode = await processor.ProcessAsync(entry, req.Message.MessageId, context.RequestAborted).ConfigureAwait(false);
             return;
         }
     }

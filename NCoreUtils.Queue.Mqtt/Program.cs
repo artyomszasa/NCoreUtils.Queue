@@ -23,7 +23,7 @@ namespace NCoreUtils.Queue.Mqtt
             }
             else
             {
-                return new IPEndPoint(IPAddress.Parse(input.Substring(0, portIndex)), int.Parse(input[(portIndex + 1)..]));
+                return new IPEndPoint(IPAddress.Parse(input.AsSpan(0, portIndex)), int.Parse(input.AsSpan(portIndex + 1)));
             }
         }
 
