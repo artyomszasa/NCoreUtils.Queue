@@ -6,9 +6,11 @@
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <!--
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishReadyToRunShowWarnings>true</PublishReadyToRunShowWarnings>
     <PublishTrimmed>true</PublishTrimmed>
+    -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.2.0" />
