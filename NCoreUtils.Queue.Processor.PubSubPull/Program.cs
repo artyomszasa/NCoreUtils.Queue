@@ -45,6 +45,7 @@ var subscriptionName = SubscriptionName.FromProjectSubscription(
 );
 var subscriber = await new SubscriberClientBuilder
 {
+    SubscriptionName = subscriptionName,
     Logger = services.GetRequiredService<ILogger<SubscriberClient>>(),
     Settings = new SubscriberClient.Settings
     {
