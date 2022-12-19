@@ -150,6 +150,62 @@ namespace NCoreUtils.Queue
                     cancellationToken
                 );
             }
+            catch (ImageException exn) when (exn.Message.Contains("Forbidden") && destination is GoogleCloudStorageResource gsDestination)
+            {
+                // retry with own credentials...
+                var newDestination = new GoogleCloudStorageResource(
+                    utils: GoogleCloudStorageUtils,
+                    bucketName: gsDestination.BucketName,
+                    objectName: gsDestination.ObjectName,
+                    contentType: gsDestination.ContentType,
+                    cacheControl: gsDestination.CacheControl,
+                    isPublic: gsDestination.IsPublic,
+                    credential: default,
+                    passthrough: false
+                );
+                try
+                {
+                    await ImageResizer.ResizeAsync(
+                        source,
+                        newDestination,
+                        new ResizeOptions(
+                            entry.TargetType,
+                            entry.TargetWidth,
+                            entry.TargetHeight,
+                            entry.Operation,
+                            weightX: entry.WeightX,
+                            weightY: entry.WeightY
+                        ),
+                        cancellationToken
+                    );
+                }
+                catch (InvalidImageException exn1)
+                {
+                    Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}].", messageId);
+                    return 204; // Message should not be retried...
+                }
+                catch (UnsupportedImageTypeException exn1)
+                {
+                    Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}].", messageId);
+                    return 204; // Message should not be retried...
+                }
+                catch (UnsupportedResizeModeException exn1)
+                {
+                    Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}].", messageId);
+                    return 204; // Message should not be retried...
+                }
+                catch (ImageException exn1)
+                {
+                    Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}]", messageId);
+                    return 204; // Message should be retried...
+                }
+                catch (Exception exn1)
+                {
+                    Logger.LogError(exn1, "Failed to process image entry, operation may be retried. [messageId = {MessageId}]", messageId);
+                    return 400; // Message should be retried...
+                }
+                return 200;
+            }
             catch (InvalidImageException exn)
             {
                 Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
