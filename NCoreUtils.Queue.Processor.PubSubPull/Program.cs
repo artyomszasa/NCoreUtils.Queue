@@ -17,6 +17,9 @@ internal class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Google.Apis.Auth.OAuth2.JsonCredentialParameters))]
     private static async System.Threading.Tasks.Task Main(string[] args)
     {
+        const string ImagesHttpClientConfiguration = "images";
+        const string VideosHttpClientConfiguration = "videos";
+
         var cancellation = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>
         {
@@ -30,7 +33,16 @@ internal class Program
             .AddJsonFile("secrets/appsettings.json", optional: true, reloadOnChange: false)
             .Build();
 
-        using var services = new ServiceCollection()
+        var serviceCollection = new ServiceCollection();
+        serviceCollection
+            .AddHttpClient(VideosHttpClientConfiguration)
+                .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(120));
+
+        serviceCollection
+            .AddHttpClient(ImagesHttpClientConfiguration)
+                .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(15));
+
+        using var services = serviceCollection
             .AddLogging(b => b
                 .ClearProviders()
                 .AddConfiguration(configuration.GetSection("Logging"))
@@ -41,11 +53,13 @@ internal class Program
             .AddImageResizerClient(
                 endpoint: configuration.GetRequiredValue("Endpoints:Images"),
                 allowInlineData: false,
-                cacheCapabilities: true
+                cacheCapabilities: true,
+                httpClient: ImagesHttpClientConfiguration
             )
             .AddVideoResizerClient(endpoint: configuration.GetRequiredValue("Endpoints:Videos"),
                 allowInlineData: false,
-                cacheCapabilities: true)
+                cacheCapabilities: true,
+                httpClient: VideosHttpClientConfiguration)
             .AddSingleton<MediaEntryProcessor>()
             .BuildServiceProvider(true);
 
