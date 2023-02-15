@@ -18,7 +18,7 @@
     <PackageReference Include="NCoreUtils.Logging" Version="6.0.0-alpha09" />
     <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="6.0.0-alpha09" />
     <PackageReference Include="NCoreUtils.Images.WebService.Client" Version="7.0.0-rc01" />
-    <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="7.0.0-alpha00" />
+    <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="7.0.0-alpha01" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Processor.Common\NCoreUtils.Queue.Processor.Common.csproj" />

@@ -10,6 +10,6 @@
     <PackageReference Include="NCoreUtils.Images.Abstractions" Version="7.0.0-rc01" />
     <PackageReference Include="NCoreUtils.Resources.Google.Cloud.Storage" Version="7.0.0" />
     <PackageReference Include="NCoreUtils.Resources.FileSystem" Version="7.0.0" />
-    <PackageReference Include="NCoreUtils.Videos.Abstractions" Version="7.0.0-alpha00" />
+    <PackageReference Include="NCoreUtils.Videos.Abstractions" Version="7.0.0-alpha01" />
   </ItemGroup>
 </Project>
