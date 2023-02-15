@@ -43,6 +43,9 @@ internal class Program
                 allowInlineData: false,
                 cacheCapabilities: true
             )
+            .AddVideoResizerClient(endpoint: configuration.GetRequiredValue("Endpoints:Videos"),
+                allowInlineData: false,
+                cacheCapabilities: true)
             .AddSingleton<MediaEntryProcessor>()
             .BuildServiceProvider(true);
 
