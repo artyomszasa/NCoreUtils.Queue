@@ -4,4 +4,4 @@ namespace NCoreUtils.Queue;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(MediaQueueEntry))]
-public partial class MediaProcessingQueueSerializerContext : JsonSerializerContext { }
+internal partial class MediaProcessingQueueSerializerContext : JsonSerializerContext { }

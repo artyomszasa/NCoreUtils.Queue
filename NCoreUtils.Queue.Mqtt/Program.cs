@@ -1,93 +1,79 @@
-using System;
-using System.Net;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using MQTTnet.Client;
+using NCoreUtils.AspNetCore;
 using NCoreUtils.Logging;
+using NCoreUtils.Queue;
 
-namespace NCoreUtils.Queue.Mqtt
-{
-    public class Program
+var builder = WebApplication.CreateBuilder(args).UsePortEnvironmentVariableToConfigureKestrel();
+
+// CONFIGURATION *******************************************************************************************************
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Environment.CurrentDirectory)
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+    .AddJsonFile("secrets/appsettings.json", optional: true, reloadOnChange: false)
+    .Build();
+builder.Configuration.AddConfiguration(configuration);
+
+// LOGGING *************************************************************************************************************
+builder.Logging.ConfigureGoogleLogging(builder.Environment, configuration);
+
+// CONFIGURE ***********************************************************************************************************
+// MQTT client options
+var mqttConfig = configuration.GetRequiredSection("Mqtt:Client").GetMqttClientConfiguration();
+var mqttClientOptions = new MqttClientOptionsBuilder()
+    .WithTcpServer(mqttConfig.Host ?? throw new InvalidOperationException("No MQTT host supplied."), mqttConfig.Port)
+    .WithCleanSession(mqttConfig.CleanSession ?? true)
+    .Build();
+
+builder.Services
+    // HTTP CONTEXT accessor
+    .AddHttpContextAccessor()
+    // MQTT client
+    .AddSingleton<IMqttClientServiceOptions>(configuration.GetRequiredSection("Mqtt").GetMqttClientServiceOptions())
+    .AddSingleton(mqttClientOptions)
+    .AddSingleton<IMqttClientService, MqttClientService>()
+    .AddHostedService(serviceProvider => serviceProvider.GetRequiredService<IMqttClientService>())
+    // Queue implementation
+    .AddSingleton<IMediaProcessingQueue, MediaProcessingQueue>()
+    // CORS
+    .AddCors(b => b.AddDefaultPolicy(opts => opts
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+        // must be at least 2 domains for CORS middleware to send Vary: Origin
+        .WithOrigins("https://example.com", "http://127.0.0.1")
+        .SetIsOriginAllowed(_ => true)
+    ))
+    // Routing
+    .AddRouting();
+
+// BUILD ***************************************************************************************************************
+var app = builder.Build();
+
+// POSTCONFIGURE *******************************************************************************************************
+app
+    // serving behind proxy
+    .UseForwardedHeaders(configuration.GetSection("ForwardedHeaders"))
+    // prepopulated logging context
+    .UsePrePopulateLoggingContext()
+    // health check
+    .Use((context, next) =>
     {
-        private static IPEndPoint ParseEndpoint(string? input)
+        if (context.Request.Path == "/healthz")
         {
-            if (string.IsNullOrEmpty(input))
-            {
-                return new IPEndPoint(IPAddress.Loopback, 5000);
-            }
-            var portIndex = input.LastIndexOf(':');
-            if (-1 == portIndex)
-            {
-                return new IPEndPoint(IPAddress.Parse(input), 5000);
-            }
-            else
-            {
-                return new IPEndPoint(IPAddress.Parse(input.AsSpan(0, portIndex)), int.Parse(input.AsSpan(portIndex + 1)));
-            }
+            context.Response.StatusCode = 200;
+            return Task.CompletedTask;
         }
+        return next();
+    })
+    // CORS
+    .UseCors()
+    // routing
+    .UseRouting()
+    // endpoints
+    .UseEndpoints(endpoints =>
+    {
+        endpoints.MapMediaProcessingQueue();
+    });
 
-        /// <summary>
-        /// Listening ip/port is determined as follows:
-        /// <para>
-        /// - if <c>PORT</c> environment variable is set --> listen at <c>0.0.0.0:{PORT}</c>;
-        /// </para>
-        /// <para>
-        /// - if <c>ASPNETCORE_LISTEN_AT</c> environment variable is set --> listen at <c>{ASPNETCORE_LISTEN_AT}</c>;
-        /// </para>
-        /// <para>
-        /// - otherwise listen at <c>127.0.0.1:5000</c>.
-        /// </para>
-        /// </summary>
-        private static IPEndPoint GetListenEndpoint()
-            => Environment.GetEnvironmentVariable("PORT") switch
-            {
-                null => ParseEndpoint(Environment.GetEnvironmentVariable("ASPNETCORE_LISTEN_AT")),
-                var rawPort => new IPEndPoint(IPAddress.Any, int.Parse(rawPort))
-            };
-
-        private static IConfiguration CreateConfiguration()
-            => new ConfigurationBuilder()
-                .SetBasePath(Environment.CurrentDirectory)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                .AddJsonFile("secrets/appsettings.json", optional: true, reloadOnChange: false)
-                .AddEnvironmentVariables()
-                .Build();
-
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args)
-        {
-            var configuration = CreateConfiguration();
-            return new HostBuilder()
-                .UseContentRoot(Environment.CurrentDirectory)
-                .ConfigureLogging((context, builder) =>
-                {
-                    builder
-                        .ClearProviders()
-                        .AddConfiguration(configuration.GetSection("Logging"));
-                    if (context.HostingEnvironment.IsDevelopment())
-                    {
-                        builder.AddConsole().AddDebug();
-                    }
-                    else
-                    {
-                        builder.Services
-                            .AddDefaultTraceIdProvider()
-                            .AddLoggingContext();
-                        builder.AddGoogleFluentd<AspNetCoreLoggerProvider>(projectId: configuration["Google:ProjectId"]);
-                    }
-                })
-                .ConfigureWebHost(webBuilder =>
-                {
-                    webBuilder
-                        .UseConfiguration(configuration)
-                        .UseStartup<Startup>()
-                        .UseKestrel(opts => opts.Listen(GetListenEndpoint()));
-                });
-        }
-    }
-}
+// RUN *****************************************************************************************************************
+app.Run();

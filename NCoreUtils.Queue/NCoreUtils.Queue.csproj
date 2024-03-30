@@ -1,27 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>NCoreUtils.Queue</RootNamespace>
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-    <!--
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <PublishReadyToRunShowWarnings>true</PublishReadyToRunShowWarnings>
-    <PublishTrimmed>true</PublishTrimmed>
-    -->
+    <!-- <PublishTrimmed>true</PublishTrimmed> -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.2.0" />
-    <PackageReference Include="NCoreUtils.AspNetCore.ForwardedHeaders" Version="7.0.0" />
-    <PackageReference Include="NCoreUtils.AspNetCore.Logging" Version="6.0.0-alpha09" />
+    <PackageReference Include="Google.Api.Gax.Grpc.GrpcNetClient" Version="3.7.0" />
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.12.0" />
+    <PackageReference Include="NCoreUtils.AspNetCore.ForwardedHeaders" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.AspNetCore.Logging" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.AspNetCore.Proto" Version="$(ProtoVersion)" />
-    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="6.0.0-alpha09" />
+    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.Proto.Generator" Version="$(ProtoVersion)" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NCoreUtils.Queue.Abstractions\NCoreUtils.Queue.Abstractions.csproj" />
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
   </ItemGroup>
 </Project>

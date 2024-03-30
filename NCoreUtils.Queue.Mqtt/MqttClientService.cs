@@ -1,40 +1,28 @@
-using System;
 using System.Buffers;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Protocol;
 
 namespace NCoreUtils.Queue;
 
-public class MqttClientService : IMqttClientService
+public class MqttClientService(
+    ILogger<MqttClientService> logger,
+    IMqttClientServiceOptions serviceOptions,
+    MqttClientOptions clientOptions) : IMqttClientService
 {
     private readonly SemaphoreSlim _sync = new(1);
 
-    private readonly ILogger<MqttClientService> _logger;
+    private readonly ILogger<MqttClientService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    private readonly MqttClientOptions _clientOptions;
+    private readonly MqttClientOptions _clientOptions = clientOptions ?? throw new ArgumentNullException(nameof(clientOptions));
 
-    private readonly IMqttClientServiceOptions _serviceOptions;
+    private readonly IMqttClientServiceOptions _serviceOptions = serviceOptions ?? throw new ArgumentNullException(nameof(serviceOptions));
 
     private IMqttClient? _client;
 
     private volatile bool _connected;
-
-    public MqttClientService(
-        ILogger<MqttClientService> logger,
-        IMqttClientServiceOptions serviceOptions,
-        MqttClientOptions clientOptions)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _clientOptions = clientOptions ?? throw new ArgumentNullException(nameof(clientOptions));
-        _serviceOptions = serviceOptions ?? throw new ArgumentNullException(nameof(serviceOptions));
-    }
 
     public Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
     {
@@ -96,7 +84,7 @@ public class MqttClientService : IMqttClientService
             {
                 await _client.DisconnectAsync(new MqttClientDisconnectOptions
                 {
-                    Reason = MqttClientDisconnectReason.AdministrativeAction,
+                    Reason = MqttClientDisconnectOptionsReason.AdministrativeAction,
                     ReasonString = "shutdown"
                 }, cancellationToken).ConfigureAwait(false);
                 _client = default;
@@ -119,7 +107,7 @@ public class MqttClientService : IMqttClientService
         {
             throw new InvalidOperationException("MQTT client is not connected.");
         }
-        var buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
+        var buffer = ArrayPool<byte>.Shared.Rent(32 * 1024);
         try
         {
             int size;

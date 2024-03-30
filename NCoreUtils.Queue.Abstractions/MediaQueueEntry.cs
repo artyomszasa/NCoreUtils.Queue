@@ -1,49 +1,37 @@
-using System;
 using NCoreUtils.Memory;
 
 namespace NCoreUtils.Queue;
 
-public class MediaQueueEntry : ISpanExactEmplaceable
+public class MediaQueueEntry(
+    string entryType,
+    string? source = default,
+    string? target = default,
+    string? operation = default,
+    int? targetWidth = default,
+    int? targetHeight = default,
+    int? weightX = default,
+    int? weightY = default,
+    string? targetType = default) : ISpanExactEmplaceable
 {
-    public string EntryType { get; }
+    public string EntryType { get; } = entryType ?? MediaQueueEntryTypes.Unknown;
 
-    public string? Source { get; }
+    public string? Source { get; } = source;
 
-    public string? Target { get; }
+    public string? Target { get; } = target;
 
-    public string? Operation { get; }
+    public string? Operation { get; } = operation;
 
-    public int? TargetWidth { get; }
+    public int? TargetWidth { get; } = targetWidth;
 
-    public int? TargetHeight { get; }
+    public int? TargetHeight { get; } = targetHeight;
 
-    public int? WeightX { get; }
+    public int? WeightX { get; } = weightX;
 
-    public int? WeightY { get; }
+    public int? WeightY { get; } = weightY;
 
-    public string? TargetType { get; }
+    public string? TargetType { get; } = targetType;
 
-    public MediaQueueEntry(
-        string entryType,
-        string? source = default,
-        string? target = default,
-        string? operation = default,
-        int? targetWidth = default,
-        int? targetHeight = default,
-        int? weightX = default,
-        int? weightY = default,
-        string? targetType = default)
-    {
-        EntryType = entryType ?? MediaQueueEntryTypes.Unknown;
-        Source = source;
-        Target = target;
-        Operation = operation;
-        TargetWidth = targetWidth;
-        TargetHeight = targetHeight;
-        WeightX = weightX;
-        WeightY = weightY;
-        TargetType = targetType;
-    }
+    #region emplaceable
 
     private int GetEmplaceBufferSize()
     {
@@ -163,4 +151,6 @@ public class MediaQueueEntry : ISpanExactEmplaceable
 
     public string ToString(string? format, IFormatProvider? formatProvider)
         => ToString();
+
+    #endregion
 }

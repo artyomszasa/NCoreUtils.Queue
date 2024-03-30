@@ -5,7 +5,4 @@ namespace NCoreUtils.Queue;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(PubSubRequest))]
 [JsonSerializable(typeof(PubSubMessage))]
-public partial class PubSubSerializerContext : JsonSerializerContext
-{
-
-}
+public partial class PubSubSerializerContext : JsonSerializerContext { }

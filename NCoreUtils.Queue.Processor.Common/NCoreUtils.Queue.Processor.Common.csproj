@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Abstractions\NCoreUtils.Queue.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="NCoreUtils.Images.Abstractions" Version="7.0.0-rc01" />
-    <PackageReference Include="NCoreUtils.Resources.Google.Cloud.Storage" Version="7.0.0" />
-    <PackageReference Include="NCoreUtils.Resources.FileSystem" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Images.Abstractions" Version="8.0.0-rc00" />
+    <PackageReference Include="NCoreUtils.Resources.Google.Cloud.Storage" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Resources.FileSystem" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.Videos.Abstractions" Version="7.0.0-alpha01" />
   </ItemGroup>
 </Project>

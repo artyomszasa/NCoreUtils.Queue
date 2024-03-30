@@ -1,25 +1,20 @@
-using System;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using NCoreUtils.Queue.Proto;
 using NCoreUtils.Proto;
+using System.Text.Json.Serialization;
 
 namespace NCoreUtils.Queue;
 
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(JsonRootMediaProcessingQueueInfo))]
+internal partial class MediaProcessingQueueSerializerContext : JsonSerializerContext { }
+
 [ProtoService(typeof(MediaProcessingQueueInfo), typeof(MediaProcessingQueueSerializerContext))]
-public class MediaProcessingQueue : IMediaProcessingQueue
+public partial class MediaProcessingQueue(ILogger<MediaProcessingQueue> logger, IMqttClientService publisherClient)
+    : IMediaProcessingQueue
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    private readonly IMqttClientService _publisherClient;
-
-    public MediaProcessingQueue(ILogger<MediaProcessingQueue> logger, IMqttClientService publisherClient)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _publisherClient = publisherClient ?? throw new ArgumentNullException(nameof(publisherClient));
-    }
+    private readonly IMqttClientService _publisherClient = publisherClient ?? throw new ArgumentNullException(nameof(publisherClient));
 
     public async Task EnqueueAsync(MediaQueueEntry entry, CancellationToken cancellationToken = default)
     {

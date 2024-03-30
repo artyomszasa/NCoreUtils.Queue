@@ -1,23 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-    <!--
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <PublishReadyToRunShowWarnings>true</PublishReadyToRunShowWarnings>
-    <PublishTrimmed>true</PublishTrimmed>
-    -->
+    <!-- <PublishTrimmed>true</PublishTrimmed> -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="7.0.0" />
-    <PackageReference Include="NCoreUtils.Logging" Version="6.0.0-alpha09" />
-    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="6.0.0-alpha09" />
-    <PackageReference Include="NCoreUtils.Images.WebService.Client" Version="7.0.0-rc01" />
+    <PackageReference Include="Google.Api.Gax.Grpc.GrpcNetClient" Version="3.7.0" />
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.12.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Extensions.Google.Cloud.Storage.ServiceAccount" Version="8.0.0-rc00" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Logging" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Images.WebService.Client" Version="8.0.0-rc00" />
     <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="7.0.0-alpha01" />
   </ItemGroup>
   <ItemGroup>

@@ -1,7 +1,4 @@
 using System.Text.Json.Serialization.Metadata;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 
 namespace NCoreUtils.Queue;
 

@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.ExceptionServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace NCoreUtils.Queue;
 
@@ -11,15 +6,15 @@ public static class MediaProcessingQueueExtensions
 {
     private sealed class SyncGuard
     {
-        private readonly List<(MediaQueueEntry Entry, Exception Error)> _entries = new();
+        private readonly List<BulkEnqueueFailure> _entries = [];
 
-        public IReadOnlyList<(MediaQueueEntry Entry, Exception Error)> Entries => _entries;
+        public IReadOnlyList<BulkEnqueueFailure> Entries => _entries;
 
         public void AddSynced(MediaQueueEntry entry, Exception error)
         {
             lock (_entries)
             {
-                _entries.Add((entry, error));
+                _entries.Add(new(entry, error));
             }
         }
     }
