@@ -21,6 +21,6 @@ public partial class MediaProcessingQueue(ILogger<MediaProcessingQueue> logger, 
         var messageId = await _publisherClient
             .PublishAsync(entry, MediaProcessingQueueSerializerContext.Default.MediaQueueEntry, cancellationToken)
             .ConfigureAwait(false);
-        _logger.LogInformation("Successfully enqueued entry {Entry} => {MessageId}.", entry, messageId);
+        _logger.LogEnqueuedEntrySuccessfully(entry, messageId);
     }
 }
