@@ -14,11 +14,11 @@ internal static class SubscriberClientExtensions
             _ = subscriber.StopAsync(TimeSpan.FromSeconds(5));
         });
         var processor = services.GetRequiredService<MediaEntryProcessor>();
-        processor.Logger.LogDebug("Start processing messages.");
+        processor.Logger.LogSubscriberClientMessageProcessStarted();
         await subscriber.StartAsync(async (message, cancellationToken) =>
         {
             var messageId = message.MessageId;
-            processor.Logger.LogDebug("Processing message {MessageId}.", messageId);
+            processor.Logger.LogSubscriberClientProcessMessage(messageId);
             try
             {
                 MediaQueueEntry entry;
@@ -29,20 +29,20 @@ internal static class SubscriberClientExtensions
                 }
                 catch (Exception exn)
                 {
-                    processor.Logger.LogError(exn, "Failed to deserialize pub/sub message {MessageId}.", messageId);
+                    processor.Logger.LogSubscriberClientDeserializeFailed(exn, messageId);
                     return SubscriberClient.Reply.Ack; // Message should not be retried...
                 }
                 var status = await processor.ProcessAsync(entry, messageId, cancellationToken).ConfigureAwait(false);
                 var ack = status < 400 ? SubscriberClient.Reply.Ack : SubscriberClient.Reply.Nack;
-                processor.Logger.LogDebug("Processed message {MessageId} => {Ack}.", messageId, ack);
+                processor.Logger.LogSubscriberClientReplyMessage(messageId, ack);
                 return ack;
             }
             catch (Exception exn)
             {
-                processor.Logger.LogError(exn, "Failed to process pub/sub message {MessageId}.", messageId);
+                processor.Logger.LogSubscriberClientReplyMessageFailed(exn, messageId);
                 return SubscriberClient.Reply.Nack;
             }
         }).ConfigureAwait(false);
-        processor.Logger.LogDebug("Processing messages stopped succefully.");
+        processor.Logger.LogSubscriberClientMessageProcessStoppedSuccessfully();
     }
 }

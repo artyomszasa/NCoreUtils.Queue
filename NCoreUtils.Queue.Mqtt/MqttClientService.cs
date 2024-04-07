@@ -26,11 +26,9 @@ public class MqttClientService(
 
     public Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
     {
-        _logger.LogDebug(
-            "MQTT client created and connected successfully (result code = {ResultCode}, response = {ResponseInformation}).",
+        _logger.LogMqttClientConnected(
             eventArgs.ConnectResult.ResultCode,
-            eventArgs.ConnectResult.ResponseInformation
-        );
+            eventArgs.ConnectResult.ResponseInformation);
         _connected = true;
         return Task.CompletedTask;
     }
@@ -41,7 +39,7 @@ public class MqttClientService(
         Interlocked.MemoryBarrierProcessWide();
         if (_client is not null && eventArgs.Reason != MqttClientDisconnectReason.AdministrativeAction && !_connected)
         {
-            _logger.LogWarning(eventArgs.Exception, "MQTT client has deisconnected, reason: {Reason}, trying to reconnect.", eventArgs.Reason);
+            _logger.LogMqttClientDisconnected(eventArgs.Exception, eventArgs.Reason);
             await _client.ConnectAsync(_clientOptions, CancellationToken.None).ConfigureAwait(false);
         }
     }
@@ -58,11 +56,11 @@ public class MqttClientService(
                 client.DisconnectedAsync += HandleDisconnectedAsync;
                 await client.ConnectAsync(_clientOptions, cancellationToken).ConfigureAwait(false);
                 _client = client;
-                _logger.LogDebug("MQTT service started successfully.");
+                _logger.LogMqttServiceStarted();
             }
             else
             {
-                _logger.LogWarning("MQTT service is already running.");
+                _logger.LogMqttServiceAlreadyRunning();
             }
         }
         finally
@@ -78,7 +76,7 @@ public class MqttClientService(
         {
             if (_client is null)
             {
-                _logger.LogWarning("MQTT service is not running.");
+                _logger.LogMqttServiceNotRunning();
             }
             else
             {
@@ -88,7 +86,7 @@ public class MqttClientService(
                     ReasonString = "shutdown"
                 }, cancellationToken).ConfigureAwait(false);
                 _client = default;
-                _logger.LogDebug("MQTT stopped successfully.");
+                _logger.LogMqttServiceStopped();
             }
         }
         finally

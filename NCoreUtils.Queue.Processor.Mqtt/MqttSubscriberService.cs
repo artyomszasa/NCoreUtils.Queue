@@ -56,7 +56,7 @@ public class MqttSubscriberService : IHostedService
         }
         catch (Exception exn)
         {
-            _logger.LogError(exn, "Failed to process entry.");
+            _logger.LogMqttFailedToReceiveMessage(exn);
             eventArgs.ProcessingFailed = true;
         }
     }
@@ -68,8 +68,8 @@ public class MqttSubscriberService : IHostedService
 
     public async Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
     {
-        _logger.LogDebug(
-            "MQTT client created and connected successfully (result code = {ResultCode}, response = {ResponseInformation}).",
+
+        _logger.LogMqttClientConnected(
             eventArgs.ConnectResult.ResultCode,
             eventArgs.ConnectResult.ResponseInformation
         );
@@ -82,10 +82,7 @@ public class MqttSubscriberService : IHostedService
                     .Build()
             }
         }).ConfigureAwait(false);
-        _logger.LogDebug(
-            "MQTT client successfully subscribed to topic {Topic}.",
-            _serviceOptions.Topic
-        );
+        _logger.LogMqttClientSubscribed(_serviceOptions.Topic);
         _connected = true;
     }
 
@@ -95,7 +92,7 @@ public class MqttSubscriberService : IHostedService
         Interlocked.MemoryBarrierProcessWide();
         if (_client is not null && eventArgs.Reason != MqttClientDisconnectReason.AdministrativeAction && !_connected)
         {
-            _logger.LogWarning(eventArgs.Exception, "MQTT client has disconnected, reason: {Reason}, trying to reconnect.", eventArgs.Reason);
+            _logger.LogMqttClientDisconnected(eventArgs.Exception, eventArgs.Reason);
             await DoConnectAsync(_client, CancellationToken.None).ConfigureAwait(false);
         }
     }
@@ -113,11 +110,11 @@ public class MqttSubscriberService : IHostedService
                 client.ApplicationMessageReceivedAsync += HandleApplicationMessageReceivedAsync;
                 _client = client;
                 await DoConnectAsync(client, cancellationToken).ConfigureAwait(false);
-                _logger.LogDebug("MQTT service started successfully.");
+                _logger.LogMqttServiceStarted();
             }
             else
             {
-                _logger.LogWarning("MQTT service is already running.");
+                _logger.LogMqttServiceAlreadyRunning();
             }
         }
         finally
@@ -133,7 +130,7 @@ public class MqttSubscriberService : IHostedService
         {
             if (_client is null)
             {
-                _logger.LogWarning("MQTT service is not running.");
+                _logger.LogMqttServiceNotRunning();
             }
             else
             {
@@ -143,7 +140,7 @@ public class MqttSubscriberService : IHostedService
                     ReasonString = "shutdown"
                 }, cancellationToken).ConfigureAwait(false);
                 _client = default;
-                _logger.LogDebug("MQTT stopped successfully.");
+                _logger.LogMqttServiceStopped();
             }
         }
         finally
