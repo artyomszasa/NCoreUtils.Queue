@@ -26,7 +26,7 @@ public class MqttClientService(
 
     public Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
     {
-        _logger.LogMQTTClientConnectSuccessfully(
+        _logger.LogMqttClientConnected(
             eventArgs.ConnectResult.ResultCode,
             eventArgs.ConnectResult.ResponseInformation);
         _connected = true;
@@ -39,7 +39,7 @@ public class MqttClientService(
         Interlocked.MemoryBarrierProcessWide();
         if (_client is not null && eventArgs.Reason != MqttClientDisconnectReason.AdministrativeAction && !_connected)
         {
-            _logger.LogMQTTClientDisconnected(eventArgs.Exception, eventArgs.Reason);
+            _logger.LogMqttClientDisconnected(eventArgs.Exception, eventArgs.Reason);
             await _client.ConnectAsync(_clientOptions, CancellationToken.None).ConfigureAwait(false);
         }
     }
@@ -56,11 +56,11 @@ public class MqttClientService(
                 client.DisconnectedAsync += HandleDisconnectedAsync;
                 await client.ConnectAsync(_clientOptions, cancellationToken).ConfigureAwait(false);
                 _client = client;
-                _logger.LogMQTTServiceStartedSuccessfully();
+                _logger.LogMqttServiceStarted();
             }
             else
             {
-                _logger.LogMQTTServiceAlreadyRunning();
+                _logger.LogMqttServiceAlreadyRunning();
             }
         }
         finally
@@ -76,7 +76,7 @@ public class MqttClientService(
         {
             if (_client is null)
             {
-                _logger.LogMQTTServiceNotRunning();
+                _logger.LogMqttServiceNotRunning();
             }
             else
             {
@@ -86,7 +86,7 @@ public class MqttClientService(
                     ReasonString = "shutdown"
                 }, cancellationToken).ConfigureAwait(false);
                 _client = default;
-                _logger.LogMQTTServiceStoppedSuccessfully();
+                _logger.LogMqttServiceStopped();
             }
         }
         finally

@@ -120,7 +120,7 @@ public class MediaEntryProcessor(
                 source = l.Value;
                 break;
             case Either<IReadableResource, string>.Right r:
-                Logger.LogFailedImageResolveSource(r.Value);
+                Logger.LogSourceImageResolvingFailed(r.Value);
                 return 204; // Message should not be retried...
             default:
                 throw new InvalidOperationException("Should never happen");
@@ -131,7 +131,7 @@ public class MediaEntryProcessor(
                 destination = l.Value;
                 break;
             case Either<IWritableResource, string>.Right r:
-                Logger.LogFailedImageResolveDestination(r.Value);
+                Logger.LogDestinationImageResolvingFailed(r.Value);
                 return 204; // Message should not be retried...
             default:
                 throw new InvalidOperationException("Should never happen");
@@ -187,31 +187,31 @@ public class MediaEntryProcessor(
             catch (InvalidImageException exn1)
             {
                 //Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}].", messageId);
-                Logger.LogFailedProcessImageEntry(exn1, messageId);
+                Logger.LogFailedToProcessImageEntry(exn1, messageId);
                 return 204; // Message should not be retried...
             }
             catch (UnsupportedImageTypeException exn1)
             {
                 //Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}].", messageId);
-                Logger.LogFailedProcessImageEntry(exn1, messageId);
+                Logger.LogFailedToProcessImageEntry(exn1, messageId);
                 return 204; // Message should not be retried...
             }
             catch (Images.UnsupportedResizeModeException exn1)
             {
                 //Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}].", messageId);
-                Logger.LogFailedProcessImageEntry(exn1, messageId);
+                Logger.LogFailedToProcessImageEntry(exn1, messageId);
                 return 204; // Message should not be retried...
             }
             catch (ImageException exn1)
             {
                 //Logger.LogError(exn1, "Failed to process image entry. [messageId = {MessageId}]", messageId);
-                Logger.LogFailedProcessImageEntry(exn1, messageId);
+                Logger.LogFailedToProcessImageEntry(exn1, messageId);
                 return 204; // Message should be retried...
             }
             catch (Exception exn1)
             {
                // Logger.LogError(exn1, "Failed to process image entry, operation may be retried. [messageId = {MessageId}]", messageId);
-                Logger.LogFailedProcessImageEntryOperationRetried(exn1, messageId);
+                Logger.LogFailedToProcessImageEntryMayBeRetried(exn1, messageId);
                 return 400; // Message should be retried...
             }
             return 200;
@@ -219,25 +219,25 @@ public class MediaEntryProcessor(
         catch (InvalidImageException exn)
         {
            // Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
-            Logger.LogFailedProcessImageEntry(exn, messageId);
+            Logger.LogFailedToProcessImageEntry(exn, messageId);
             return 204; // Message should not be retried...
         }
         catch (UnsupportedImageTypeException exn)
         {
             //Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
-            Logger.LogFailedProcessImageEntry(exn, messageId);
+            Logger.LogFailedToProcessImageEntry(exn, messageId);
             return 204; // Message should not be retried...
         }
         catch (Images.UnsupportedResizeModeException exn)
         {
             //Logger.LogError(exn, "Failed to process image entry. [messageId = {MessageId}].", messageId);
-            Logger.LogFailedProcessImageEntry(exn, messageId);
+            Logger.LogFailedToProcessImageEntry(exn, messageId);
             return 204; // Message should not be retried...
         }
         catch (Exception exn)
         {
             //Logger.LogError(exn, "Failed to process image entry, operation may be retried. [messageId = {MessageId}]", messageId);
-            Logger.LogFailedProcessImageEntryOperationRetried(exn, messageId);
+            Logger.LogFailedToProcessImageEntryMayBeRetried(exn, messageId);
             return 400; // Message should be retried...
         }
         return 200;
@@ -253,7 +253,7 @@ public class MediaEntryProcessor(
                 source = l.Value;
                 break;
             case Either<IReadableResource, string>.Right r:
-                Logger.LogFailedVideoResolveSource(r.Value);
+                Logger.LogVideoSourceResolvingFailed(r.Value);
                 return 204; // Message should not be retried...
             default:
                 throw new InvalidOperationException("Should never happen");
@@ -264,7 +264,7 @@ public class MediaEntryProcessor(
                 destination = l.Value;
                 break;
             case Either<IWritableResource, string>.Right r:
-                Logger.LogFailedVideoResolveDestination(r.Value);
+                Logger.LogVideoDestinationResolvingFailed(r.Value);
                 return 204; // Message should not be retried...
             default:
                 throw new InvalidOperationException("Should never happen");
@@ -294,12 +294,12 @@ public class MediaEntryProcessor(
                     ),
                     cancellationToken: cancellationToken
                 ).ConfigureAwait(false);
-                Logger.LogProcessedVideoSuccessfully(entry.Source, entry.Target);
+                Logger.LogVideoProcessed(entry.Source, entry.Target);
                 return 204;
             }
             catch (Exception exn)
             {
-                Logger.LogFailedProcessVideoEntryOperationRetried(exn,messageId);
+                Logger.LogFailedToProcessVideoEntryMayBeRetried(exn,messageId);
                 // FIXME: Retryable error handling
                 return 204; // Message should not be retried...
                 // return 400; // Message should be retried...
@@ -319,12 +319,12 @@ public class MediaEntryProcessor(
                     ),
                     cancellationToken: cancellationToken
                 ).ConfigureAwait(false);
-                Logger.LogCreateThumbnailSuccessfully(entry.Source, entry.Target);
+                Logger.LogThumbnailCreated(entry.Source, entry.Target);
                 return 204;
             }
             catch (Exception exn)
             {
-                Logger.LogFailedProcessVideoThumbnailEntryOperationRetried(exn, messageId);
+                Logger.LogFailedToProcessVideoThumbnailEntryMayBeRetried(exn, messageId);
                 // FIXME: Retryable error handling
                 return 204; // Message should not be retried...
                 // return 400; // Message should be retried...
@@ -332,7 +332,7 @@ public class MediaEntryProcessor(
         }
         else
         {
-            Logger.LogUnsupportedVideoOperation(entry.Operation);
+            Logger.LogUnsupportedVideo(entry.Operation);
             return 204; // Message should not be retried...
         }
     }
@@ -341,7 +341,7 @@ public class MediaEntryProcessor(
     {
         if (string.IsNullOrEmpty(entry.EntryType))
         {
-            Logger.LogFailedProcessMissingMediaEntryType(messageId);
+            Logger.LogMissingMediaEntryType(messageId);
             return new ValueTask<int>(204); // Message should not be retried...
         }
         if (StringComparer.InvariantCultureIgnoreCase.Equals(entry.EntryType, MediaQueueEntryTypes.Image))
@@ -352,7 +352,7 @@ public class MediaEntryProcessor(
         {
             return new ValueTask<int>(ProcessVideoAsync(entry, messageId, cancellationToken));
         }
-        Logger.LogFailedProcessUnsupportedMediaEntryType(entry.EntryType, messageId);
+        Logger.LogUnsupportedMediaEntryType(entry.EntryType, messageId);
         return new ValueTask<int>(204); // Message should not be retried...
     }
 }

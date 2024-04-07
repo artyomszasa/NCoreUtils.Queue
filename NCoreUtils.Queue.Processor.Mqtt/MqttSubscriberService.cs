@@ -56,7 +56,7 @@ public class MqttSubscriberService : IHostedService
         }
         catch (Exception exn)
         {
-            _logger.LogMqttApplicationMessageReceivedFailure(exn);
+            _logger.LogMqttFailedToReceiveMessage(exn);
             eventArgs.ProcessingFailed = true;
         }
     }
@@ -69,7 +69,7 @@ public class MqttSubscriberService : IHostedService
     public async Task HandleConnectedAsync(MqttClientConnectedEventArgs eventArgs)
     {
 
-        _logger.LogMqttClientConnectedSuccessfully(
+        _logger.LogMqttClientConnected(
             eventArgs.ConnectResult.ResultCode,
             eventArgs.ConnectResult.ResponseInformation
         );
@@ -82,7 +82,7 @@ public class MqttSubscriberService : IHostedService
                     .Build()
             }
         }).ConfigureAwait(false);
-        _logger.LogMqttClientSubscribedSuccessfully(_serviceOptions.Topic);
+        _logger.LogMqttClientSubscribed(_serviceOptions.Topic);
         _connected = true;
     }
 
@@ -114,7 +114,7 @@ public class MqttSubscriberService : IHostedService
             }
             else
             {
-                _logger.LogMqttServiceRunning();
+                _logger.LogMqttServiceAlreadyRunning();
             }
         }
         finally
