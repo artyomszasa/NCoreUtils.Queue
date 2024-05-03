@@ -22,8 +22,6 @@
     <PackageReference Include="NCoreUtils.Extensions.Google.Cloud.Storage.ServiceAccount" Version="8.0.0-rc00" />
     <PackageReference Include="NCoreUtils.Images.WebService.Client" Version="8.0.0-rc00" />
     <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.0.0" />
-    <!--
-    <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="3.1.0-beta01" />
-    -->
+    <PackageReference Include="NCoreUtils.Videos.WebService.Client" Version="7.0.0-alpha01" />
   </ItemGroup>
 </Project>

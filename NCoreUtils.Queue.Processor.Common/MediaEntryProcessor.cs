@@ -151,6 +151,7 @@ public class MediaEntryProcessor(
                 ),
                 cancellationToken
             );
+            Logger.LogImageProcessed(source, destination);
         }
         catch (ImageException exn)
             when (exn.Message.Contains("Forbidden")
@@ -183,6 +184,7 @@ public class MediaEntryProcessor(
                     ),
                     cancellationToken
                 );
+                Logger.LogImageProcessed(source, newDestination);
             }
             catch (InvalidImageException exn1)
             {
@@ -294,7 +296,7 @@ public class MediaEntryProcessor(
                     ),
                     cancellationToken: cancellationToken
                 ).ConfigureAwait(false);
-                Logger.LogVideoProcessed(entry.Source, entry.Target);
+                Logger.LogVideoProcessed(source, destination);
                 return 204;
             }
             catch (Exception exn)

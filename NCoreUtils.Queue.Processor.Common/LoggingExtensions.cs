@@ -30,6 +30,8 @@ internal static partial class LoggingExtensions
 
     public const int UnsupportedMediaEntryType = 11712;
 
+    public const int ImageProcessed = 11713;
+
     [LoggerMessage(
         EventId = SourceImageResolvingFailed,
         EventName = nameof(SourceImageResolvingFailed),
@@ -69,6 +71,14 @@ internal static partial class LoggingExtensions
         string messageId);
 
     [LoggerMessage(
+        EventId = ImageProcessed,
+        EventName = nameof(ImageProcessed),
+        Level = LogLevel.Information,
+        Message = "Successfully processed image {Source} => {Target}."
+    )]
+    public static partial void LogImageProcessed(this ILogger logger, IReadableResource source, IWritableResource target);
+
+    [LoggerMessage(
         EventId = VideoSourceResolvingFailed,
         EventName = nameof(VideoSourceResolvingFailed),
         Level = LogLevel.Error,
@@ -90,7 +100,7 @@ internal static partial class LoggingExtensions
         Level = LogLevel.Information,
         Message = "Successfully processed video {Source} => {Target}."
     )]
-    public static partial void LogVideoProcessed(this ILogger logger, string? source, string? target);
+    public static partial void LogVideoProcessed(this ILogger logger, IReadableResource source, IWritableResource target);
 
     [LoggerMessage(
         EventId = FailedToProcessVideoEntryMayBeRetried,

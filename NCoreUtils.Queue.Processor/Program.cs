@@ -4,7 +4,12 @@ using NCoreUtils.Images;
 using NCoreUtils.Logging;
 using NCoreUtils.Queue;
 
-var builder = WebApplication.CreateBuilder(args).UsePortEnvironmentVariableToConfigureKestrel();
+var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions
+{
+    EnvironmentName = GetEnvironmentName(),
+    ContentRootPath = Environment.CurrentDirectory
+}).UsePortEnvironmentVariableToConfigureKestrel();
+builder.Host.UseConsoleLifetime();
 
 // CONFIGURATION *******************************************************************************************************
 var configuration = new ConfigurationBuilder()
@@ -18,31 +23,45 @@ builder.Configuration.AddConfiguration(configuration);
 builder.Logging.ConfigureGoogleLogging(builder.Environment, configuration);
 
 // CONFIGURE ***********************************************************************************************************
+const string ImagesClientConfiguration = nameof(ImagesClientConfiguration);
+const string VideosClientConfiguration = nameof(VideosClientConfiguration);
 builder.Services
     .AddHttpContextAccessor()
-        // HTTP CLIENT
-        .AddHttpClient()
-        // GOOGLE
-        .AddGoogleCloudStorageUtils()
-        // Resources
-        .AddCompositeResourceFactory(o => o
-            .AddFileSystemResourceFactory()
-            .AddGoogleCloudStorageResourceFactory(passthrough: true)
-        )
-        .AddImageResizerClient(configuration.GetSection("Images"))
-        // .AddVideoResizerClient(_configuration.GetSection("Videos"))
-        // Media entry processor implementation
-        .AddSingleton<MediaEntryProcessor>()
-        // CORS
-        .AddCors(b => b.AddDefaultPolicy(opts => opts
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials()
-            // must be at least 2 domains for CORS middleware to send Vary: Origin
-            .WithOrigins("https://example.com", "http://127.0.0.1")
-            .SetIsOriginAllowed(_ => true)
-        ))
-        .AddRouting();
+    // HTTP CLIENT
+    .AddHttpClient()
+    .AddImagesHttpClientConfiguration(ImagesClientConfiguration, configuration.GetTimeSpan("Timeouts:Images", TimeSpan.FromMinutes(15)))
+    .AddVideosHttpClientConfiguration(VideosClientConfiguration, configuration.GetTimeSpan("Timeouts:Videos", TimeSpan.FromHours(2)))
+    // GOOGLE
+    .AddGoogleCloudStorageUtils()
+    // Resources
+    .AddCompositeResourceFactory(o => o
+        .AddFileSystemResourceFactory()
+        .AddGoogleCloudStorageResourceFactory(passthrough: true)
+    )
+    .AddImageResizerClient(
+        endpoint: configuration.GetRequiredValue("Endpoints:Images"),
+        allowInlineData: false,
+        cacheCapabilities: true,
+        httpClient: ImagesClientConfiguration
+    )
+    .AddVideoResizerClient(
+        endpoint: configuration.GetRequiredValue("Endpoints:Videos"),
+        allowInlineData: false,
+        cacheCapabilities: true,
+        httpClient: VideosClientConfiguration
+    )
+    // Media entry processor implementation
+    .AddSingleton<MediaEntryProcessor>()
+    // CORS
+    .AddCors(b => b.AddDefaultPolicy(opts => opts
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+        // must be at least 2 domains for CORS middleware to send Vary: Origin
+        .WithOrigins("https://example.com", "http://127.0.0.1")
+        .SetIsOriginAllowed(_ => true)
+    ))
+    .AddRouting();
 
 // BUILD ***************************************************************************************************************
 var app = builder.Build();
@@ -58,24 +77,36 @@ app
     {
         if (context.Request.Path == "/healthz")
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = StatusCodes.Status200OK;
             return Task.CompletedTask;
         }
         return next();
     })
     // CORS
     .UseCors()
-    // routing
-    .UseRouting()
-    // endpoints
-    .UseEndpoints(endpoints =>
+    // logic
+    .Run(context =>
     {
-        endpoints.MapPost("/", context =>
+        var request = context.Request;
+        if (request.Path == "/" && HttpMethods.IsPost(request.Method))
         {
             var processor = context.RequestServices.GetRequiredService<MediaEntryProcessor>();
             return processor.ProcessRequestAsync(context);
-        });
+        }
+        var response = context.Response;
+        response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
     });
 
 // RUN *****************************************************************************************************************
 app.Run();
+
+static string GetEnvironmentName() => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") switch
+{
+    null or "" => Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") switch
+    {
+        null or "" => "Development",
+        string dotnetEnv => dotnetEnv
+    },
+    string aspNetCoreEnv => aspNetCoreEnv
+};

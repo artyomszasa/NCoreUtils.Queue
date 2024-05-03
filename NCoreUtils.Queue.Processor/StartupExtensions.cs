@@ -36,6 +36,7 @@ internal static class StartupExtensions
 
     public static WebApplicationBuilder UsePortEnvironmentVariableToConfigureKestrel(this WebApplicationBuilder builder)
     {
+        builder.WebHost.UseKestrelCore();
         if (Environment.GetEnvironmentVariable("PORT") is string rawPort)
         {
             if (!int.TryParse(rawPort, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))
@@ -48,5 +49,38 @@ internal static class StartupExtensions
             });
         }
         return builder;
+    }
+
+    public static TimeSpan GetTimeSpan(this IConfiguration configuration, string key, TimeSpan defaultValue)
+    {
+        var raw = configuration[key];
+        if (!string.IsNullOrEmpty(raw))
+        {
+            if (!TimeSpan.TryParse(raw, CultureInfo.InvariantCulture, out var value))
+            {
+                var fullPath = configuration is IConfigurationSection section
+                    ? $"{section.Path}:{key}"
+                    : key;
+                throw new InvalidOperationException($"\"{raw}\" is not a valid TimeSpan at {fullPath}.");
+            }
+            return value;
+        }
+        return defaultValue;
+    }
+
+    public static IServiceCollection AddImagesHttpClientConfiguration(this IServiceCollection services, string configurationName, TimeSpan timeout)
+    {
+        services
+            .AddHttpClient(configurationName)
+                .ConfigureHttpClient(client => client.Timeout = timeout);
+        return services;
+    }
+
+    public static IServiceCollection AddVideosHttpClientConfiguration(this IServiceCollection services, string configurationName, TimeSpan timeout)
+    {
+        services
+            .AddHttpClient(configurationName)
+                .ConfigureHttpClient(client => client.Timeout = timeout);
+        return services;
     }
 }

@@ -12,7 +12,8 @@ public static class MediaEntryProcessorExtensions
         {
             req = (await JsonSerializer.DeserializeAsync(context.Request.Body, PubSubSerializerContext.Default.PubSubRequest, context.RequestAborted).ConfigureAwait(false))
                 ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request.");
-            entry = JsonSerializer.Deserialize(Convert.FromBase64String(req.Message.Data), MediaProcessingQueueSerializerContext.Default.MediaQueueEntry)
+            var entryData = Convert.FromBase64String(req.Message.Data);
+            entry = JsonSerializer.Deserialize(entryData, MediaProcessingQueueSerializerContext.Default.MediaQueueEntry)
                 ?? throw new InvalidOperationException("Unable to deserialize Pub/Sub request entry.");
         }
         catch (Exception exn)
