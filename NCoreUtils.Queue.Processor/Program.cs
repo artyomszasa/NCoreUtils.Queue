@@ -36,7 +36,7 @@ builder.Services
     // Resources
     .AddCompositeResourceFactory(o => o
         .AddFileSystemResourceFactory()
-        .AddGoogleCloudStorageResourceFactory(passthrough: true)
+        .AddGoogleCloudStorageResourceFactory(passthrough: false, publicByDefault: true)
     )
     .AddImageResizerClient(
         endpoint: configuration.GetRequiredValue("Endpoints:Images"),
