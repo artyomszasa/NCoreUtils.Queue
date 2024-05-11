@@ -14,11 +14,12 @@
     <PackageReference Include="NCoreUtils.AspNetCore.ForwardedHeaders" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.AspNetCore.Logging" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.AspNetCore.Proto" Version="$(ProtoVersion)" />
-    <PackageReference Include="NCoreUtils.Extensions.Google.Cloud.PubSub.ServiceAccount" Version="8.1.0" />
+    <PackageReference Include="NCoreUtils.Extensions.Google.Cloud.PubSub.ServiceAccount" Version="8.1.1" />
     <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.0.0" />
     <PackageReference Include="NCoreUtils.Proto.Generator" Version="$(ProtoVersion)" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCoreUtils.Queue.Shared\NCoreUtils.Queue.Shared.csproj" />
+    <!-- <ProjectReference Include="..\..\NCoreUtils.Extensions\NCoreUtils.Extensions.Google.Cloud.PubSub.ServiceAccount\NCoreUtils.Extensions.Google.Cloud.PubSub.ServiceAccount.csproj" /> -->
   </ItemGroup>
 </Project>

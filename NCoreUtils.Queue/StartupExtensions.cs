@@ -50,8 +50,9 @@ internal static class StartupExtensions
     {
         var projectId = configuration.GetRequiredValue("Google:ProjectId");
         var topic = configuration.GetRequiredValue("Google:TopicId");
+        var endpoint = configuration["Endpoints:GooglePubSub"];
         return services
-            .AddGoogleCloudPubSubClient()
+            .AddGoogleCloudPubSubClient(endpoint, configureHttpClient: true)
             .AddSingleton<PublisherClient>(serviceProvider => new(
                 projectId: projectId,
                 topic: topic,
