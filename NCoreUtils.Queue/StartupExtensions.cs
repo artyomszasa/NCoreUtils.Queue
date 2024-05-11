@@ -1,5 +1,5 @@
 using System.Globalization;
-using Google.Cloud.PubSub.V1;
+using NCoreUtils.Google.Cloud.PubSub;
 using NCoreUtils.Logging;
 using NCoreUtils.Logging.Google;
 
@@ -7,6 +7,17 @@ namespace NCoreUtils.Queue;
 
 internal static class StartupExtensions
 {
+    private static string GetRequiredValue(this IConfiguration configuration, string key)
+    {
+        var value = configuration[key];
+        if (string.IsNullOrEmpty(value))
+        {
+            var path = configuration is IConfigurationSection section ? $"{section.Path}:{key}" : key;
+            throw new InvalidOperationException($"No required value found at {path}");
+        }
+        return value;
+    }
+
     public static ILoggingBuilder ConfigureGoogleLogging(
         this ILoggingBuilder builder,
         IHostEnvironment env,
@@ -37,21 +48,20 @@ internal static class StartupExtensions
 
     public static IServiceCollection AddPubSubPublisherClient(this IServiceCollection services, IConfiguration configuration)
     {
-        var topicName = new TopicName(configuration["Google:ProjectId"], configuration["Google:TopicId"]);
+        var projectId = configuration.GetRequiredValue("Google:ProjectId");
+        var topic = configuration.GetRequiredValue("Google:TopicId");
         return services
-            .AddSingleton(serviceProvider =>
-            {
-                var settingsBuilder = new PublisherClientBuilder()
-                {
-                    GrpcAdapter = Google.Api.Gax.Grpc.GrpcNetClientAdapter.Default,
-                    Logger = serviceProvider.GetRequiredService<ILogger<PublisherClient>>()
-                };
-                return settingsBuilder.Build(serviceProvider);
-            });
+            .AddGoogleCloudPubSubClient()
+            .AddSingleton<PublisherClient>(serviceProvider => new(
+                projectId: projectId,
+                topic: topic,
+                api: serviceProvider.GetRequiredService<IPubSubV1Api>()
+            ));
     }
 
     public static WebApplicationBuilder UsePortEnvironmentVariableToConfigureKestrel(this WebApplicationBuilder builder)
     {
+        builder.WebHost.UseKestrelCore();
         if (Environment.GetEnvironmentVariable("PORT") is string rawPort)
         {
             if (!int.TryParse(rawPort, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))

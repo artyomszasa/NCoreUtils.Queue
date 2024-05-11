@@ -2,7 +2,12 @@ using NCoreUtils.AspNetCore;
 using NCoreUtils.Logging;
 using NCoreUtils.Queue;
 
-var builder = WebApplication.CreateBuilder(args).UsePortEnvironmentVariableToConfigureKestrel();
+var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions
+{
+    EnvironmentName = GetEnvironmentName(),
+    ContentRootPath = Environment.CurrentDirectory
+});
+builder.UsePortEnvironmentVariableToConfigureKestrel();
 
 // CONFIGURATION *******************************************************************************************************
 var configuration = new ConfigurationBuilder()
@@ -66,3 +71,13 @@ app
 
 // RUN *****************************************************************************************************************
 app.Run();
+
+static string GetEnvironmentName() => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") switch
+{
+    null or "" => Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") switch
+    {
+        null or "" => "Development",
+        string dotnetEnv => dotnetEnv
+    },
+    string aspNetCoreEnv => aspNetCoreEnv
+};

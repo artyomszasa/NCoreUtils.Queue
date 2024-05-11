@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
 using NCoreUtils.Queue.Proto;
 using NCoreUtils.Proto;
@@ -21,7 +20,7 @@ public partial class MediaProcessingQueue(ILogger<MediaProcessingQueue> logger, 
     public async Task EnqueueAsync(MediaQueueEntry entry, CancellationToken cancellationToken = default)
     {
         var data = JsonSerializer.SerializeToUtf8Bytes(entry, MediaProcessingQueueSerializerContext.Default.MediaQueueEntry);
-        var messageId = await _publisherClient.PublishAsync(ByteString.CopyFrom(data));
+        var messageId = await _publisherClient.PublishAsync(Convert.ToBase64String(data), cancellationToken).ConfigureAwait(false);
         _logger.LogEnqueuedSuccessfully(entry, messageId);
     }
 }
