@@ -8,7 +8,8 @@ internal static partial class LoggingExtensions
         EventId = EnqueuedSuccessfully,
         EventName = nameof(EnqueuedSuccessfully),
         Level = LogLevel.Information,
-        Message = "Successfully enqueued entry {Entry} => {MessageId}."
+        Message = "Successfully enqueued entry {Entry} => {MessageId}.",
+        SkipEnabledCheck = true
     )]
     public static partial void LogEnqueuedSuccessfully(this ILogger logger, MediaQueueEntry entry, string messageId);
 }

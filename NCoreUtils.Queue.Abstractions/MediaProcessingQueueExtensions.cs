@@ -20,7 +20,7 @@ public static class MediaProcessingQueueExtensions
     }
 
     public static async Task<BulkEnqueueResults> EnqueueAsync(
-        this IMediaProcessingQueue queue,
+        IMediaProcessingQueue queue,
         IEnumerable<MediaQueueEntry> entries,
         CancellationToken cancellationToken = default)
     {
@@ -42,21 +42,20 @@ public static class MediaProcessingQueueExtensions
     }
 
     public static async Task<BulkEnqueueResults> EnqueueAsync(
-        this IMediaProcessingQueue queue,
+        IMediaProcessingQueue queue,
         IEnumerable<MediaQueueEntry> entries,
         int retryCount,
         bool throwWhenFailed,
         CancellationToken cancellationToken = default)
     {
-        var res = await queue.EnqueueAsync(entries, cancellationToken).ConfigureAwait(false);
+        var res = await EnqueueAsync(queue, entries, cancellationToken).ConfigureAwait(false);
         if (res.FailedCount == 0)
         {
             return res;
         }
         if (retryCount > 0)
         {
-            var res1 = await queue
-                .EnqueueAsync(res.Failed.Select(tup => tup.Entry), retryCount - 1, false, cancellationToken)
+            var res1 = await EnqueueAsync(queue, res.Failed.Select(tup => tup.Entry), retryCount - 1, false, cancellationToken)
                 .ConfigureAwait(false);
             // merge results
             res = new BulkEnqueueResults(res.SucceededCount + res1.SucceededCount, res1.Failed);
