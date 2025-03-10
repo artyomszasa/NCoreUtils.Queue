@@ -12,10 +12,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NCoreUtils.AspNetCore.ForwardedHeaders" Version="8.0.0" />
-    <PackageReference Include="NCoreUtils.AspNetCore.Logging" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.AspNetCore.Logging" Version="8.1.0-rc00" />
     <PackageReference Include="NCoreUtils.AspNetCore.Proto" Version="$(ProtoVersion)" />
     <PackageReference Include="NCoreUtils.Extensions.Google.Cloud.PubSub.ServiceAccount" Version="8.1.1" />
-    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.1.0-rc00" />
     <PackageReference Include="NCoreUtils.Proto.Generator" Version="$(ProtoVersion)" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>

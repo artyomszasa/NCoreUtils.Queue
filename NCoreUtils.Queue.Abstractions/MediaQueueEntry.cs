@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using NCoreUtils.Memory;
 
 namespace NCoreUtils.Queue;
@@ -11,7 +12,8 @@ public class MediaQueueEntry(
     int? targetHeight = default,
     int? weightX = default,
     int? weightY = default,
-    string? targetType = default) : ISpanExactEmplaceable
+    string? targetType = default)
+    : ISpanExactEmplaceable
 {
     public string EntryType { get; } = entryType ?? MediaQueueEntryTypes.Unknown;
 
@@ -21,14 +23,19 @@ public class MediaQueueEntry(
 
     public string? Operation { get; } = operation;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int? TargetWidth { get; } = targetWidth;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int? TargetHeight { get; } = targetHeight;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int? WeightX { get; } = weightX;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int? WeightY { get; } = weightY;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? TargetType { get; } = targetType;
 
     #region emplaceable

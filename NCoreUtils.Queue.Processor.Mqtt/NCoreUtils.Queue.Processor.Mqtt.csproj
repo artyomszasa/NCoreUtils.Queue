@@ -17,8 +17,8 @@
     <ProjectReference Include="..\NCoreUtils.Queue.Processor.Common\NCoreUtils.Queue.Processor.Common.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.Logging" Version="8.0.0" />
-    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Logging" Version="8.1.0-rc00" />
+    <PackageReference Include="NCoreUtils.Logging.Google.Fluentd" Version="8.1.0-rc00" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />

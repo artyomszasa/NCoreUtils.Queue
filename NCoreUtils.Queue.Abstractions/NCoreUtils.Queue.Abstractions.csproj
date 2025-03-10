@@ -4,6 +4,9 @@
     <RootNamespace>NCoreUtils.Queue</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NCoreUtils.Extensions.Memory" Version="8.0.0" />
+    <PackageReference Include="NCoreUtils.Extensions.Memory" Version="8.0.2" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net8.0' ">
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 </Project>
