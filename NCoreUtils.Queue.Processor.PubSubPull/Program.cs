@@ -1,18 +1,16 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-using Google.Cloud.PubSub.V1;
+﻿using System.Threading.Channels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NCoreUtils;
+using NCoreUtils.Google;
+using NCoreUtils.Google.Cloud.PubSub;
 using NCoreUtils.Images;
 using NCoreUtils.Logging;
 using NCoreUtils.Queue;
 
 internal class Program
 {
-    // NOTE: Required to use GOOGLE_APPLICATION_CREDENTIALS
-    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Google.Apis.Auth.OAuth2.JsonCredentialParameters))]
     private static async Task Main(string[] args)
     {
         const string ImagesHttpClientConfiguration = "images";
@@ -40,6 +38,8 @@ internal class Program
             .AddHttpClient(ImagesHttpClientConfiguration)
                 .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(15));
 
+        var googleCredentials = await ServiceAccountCredentialData.ReadDefaultAsync(CancellationToken.None);
+
         // CONFIGURE ***************************************************************************************************
         using var services = serviceCollection
             // LOGGING
@@ -49,22 +49,31 @@ internal class Program
                 .AddGoogleFluentd(projectId: configuration["Google:ProjectId"])
             )
             // HTTP CLIENT
-            .AddHttpClient()
-            // GOOGLE
-            .AddGoogleCloudStorageUtils()
+            .ConfigureHttpClientDefaults(b =>
+            {
+                b.UseSocketsHttpHandler(configureHandler: (opts, _) =>
+                {
+                    opts.PooledConnectionLifetime = TimeSpan.Zero;
+                    opts.PooledConnectionIdleTimeout = TimeSpan.Zero;
+                });
+            })
+            // GOOGLE (STORAGE)
+            .AddGoogleCloudStorageUtils(googleCredentials)
+            // GOOGLE (PUB/SUB)
+            .AddGoogleCloudPubSubClient(googleCredentials)
             // Resources
             .AddCompositeResourceFactory(o => o
                 .AddFileSystemResourceFactory()
-                .AddGoogleCloudStorageResourceFactory(passthrough: true)
+                .AddGoogleCloudStorageResourceFactory(passthrough: false)
             )
-            // IMAGES
+            // Images client
             .AddImageResizerClient(
                 endpoint: configuration.GetRequiredValue("Endpoints:Images"),
                 allowInlineData: false,
                 cacheCapabilities: true,
                 httpClient: ImagesHttpClientConfiguration
             )
-            // VIDEOS
+            // Videos client
             .AddVideoResizerClient(endpoint: configuration.GetRequiredValue("Endpoints:Videos"),
                 allowInlineData: false,
                 cacheCapabilities: true,
@@ -73,20 +82,57 @@ internal class Program
             .AddSingleton<MediaEntryProcessor>()
             .BuildServiceProvider(true);
 
-        var subscriptionName = SubscriptionName.FromProjectSubscription(
-            projectId: configuration.GetRequiredValue("Google:ProjectId"),
-            subscriptionId: configuration.GetRequiredValue("Google:SubscriptionId")
-        );
-        var subscriber = await new SubscriberClientBuilder
+        var projectId = configuration.GetRequiredValue("Google:ProjectId");
+        var subscriptionId = configuration.GetRequiredValue("Google:SubscriptionId");
+        var pubSubClient = services.GetRequiredService<IPubSubV1Api>();
+        var processor = services.GetRequiredService<MediaEntryProcessor>();
+        var logger = services.GetRequiredService<ILogger<SubscriberClient>>();
+
+        logger.LogSubscriberClientMessageProcessStarted();
+
+        var channel = Channel.CreateUnbounded<ReceivedMessage>(new UnboundedChannelOptions
         {
-            SubscriptionName = subscriptionName,
-            Logger = services.GetRequiredService<ILogger<SubscriberClient>>(),
-            Settings = new SubscriberClient.Settings
+            SingleReader = false,
+            SingleWriter = true,
+            AllowSynchronousContinuations = false
+        });
+
+        var workerTask = Task.WhenAll(Enumerable.Range(0, SubscriberClient.ConcurrentWorkerCount).Select(_ =>
+        {
+            return new SubscriberClient(
+                logger,
+                pubSubClient,
+                projectId,
+                subscriptionId,
+                channel.Reader,
+                processor
+            ).ProcessAsync(cancellation.Token);
+        }));
+
+
+        while (!cancellation.IsCancellationRequested)
+        {
+            try
             {
-                AckDeadline = TimeSpan.FromMinutes(5)
-            },
-            GrpcAdapter = Google.Api.Gax.Grpc.GrpcNetClientAdapter.Default
-        }.BuildAsync(cancellation.Token).ConfigureAwait(false);
-        await subscriber.RunAsync(services, cancellation.Token).ConfigureAwait(false);
+                var messages = await pubSubClient.PullAsync(projectId, subscriptionId, 12, cancellation.Token);
+                if (messages.ReceivedMessages is { Count: > 0 } receivedMessages)
+                {
+                    logger.LogSubscriberClientReceivedMessages(receivedMessages.Count);
+                    foreach (var message in receivedMessages)
+                    {
+                        await channel.Writer.WriteAsync(message, cancellation.Token).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (OperationCanceledException) { /* noop */ }
+            catch (Exception exn)
+            {
+                logger.LogSubscriberClientPullFailed(exn);
+            }
+        }
+
+        // await worker completion
+        await workerTask.ConfigureAwait(false);
+        logger.LogSubscriberClientMessageProcessStoppedSuccessfully();
     }
 }
