@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NCoreUtils;
 using NCoreUtils.Google;
+using NCoreUtils.Google.Cloud.Monitoring;
 using NCoreUtils.Google.Cloud.PubSub;
 using NCoreUtils.Images;
 using NCoreUtils.Logging;
@@ -22,6 +23,11 @@ internal class Program
             e.Cancel = true;
             cancellation.Cancel();
         };
+        using var _ = System.Runtime.InteropServices.PosixSignalRegistration.Create(System.Runtime.InteropServices.PosixSignal.SIGTERM, ctx =>
+        {
+            ctx.Cancel = true;
+            cancellation.Cancel();
+        });
 
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Environment.CurrentDirectory)
@@ -61,6 +67,8 @@ internal class Program
             .AddGoogleCloudStorageUtils(googleCredentials)
             // GOOGLE (PUB/SUB)
             .AddGoogleCloudPubSubClient(googleCredentials)
+            // GOOGLE (MONITORING)
+            .AddGoogleCloudMonitoringClient(googleCredentials)
             // Resources
             .AddCompositeResourceFactory(o => o
                 .AddFileSystemResourceFactory()
@@ -88,8 +96,20 @@ internal class Program
         var processor = services.GetRequiredService<MediaEntryProcessor>();
         var logger = services.GetRequiredService<ILogger<SubscriberClient>>();
 
-        logger.LogSubscriberClientMessageProcessStarted();
+        // METRICS *****************************************************************************************************
+        var monitoredResource = await ScheduledHeapMetricsDispatcher.FetchCurrentResourceDataAsync(
+            httpClientFactory: services.GetRequiredService<IHttpClientFactory>(),
+            cancellationToken: cancellation.Token
+        );
+        var metricsTask = new ScheduledHeapMetricsDispatcher(
+            logger: services.GetRequiredService<ILogger<ScheduledHeapMetricsDispatcher>>(),
+            api: services.GetRequiredService<IMonitoringV3Api>(),
+            projectId: projectId,
+            resource: monitoredResource,
+            delay: TimeSpan.FromSeconds(20)
+        ).RunAsync(cancellation.Token);
 
+        // PROCESSIG ***************************************************************************************************
         var channel = Channel.CreateUnbounded<ReceivedMessage>(new UnboundedChannelOptions
         {
             SingleReader = false,
@@ -97,6 +117,7 @@ internal class Program
             AllowSynchronousContinuations = false
         });
 
+        // WORKER TASKS
         var workerTask = Task.WhenAll(Enumerable.Range(0, SubscriberClient.ConcurrentWorkerCount).Select(_ =>
         {
             return new SubscriberClient(
@@ -109,7 +130,9 @@ internal class Program
             ).ProcessAsync(cancellation.Token);
         }));
 
+        logger.LogSubscriberClientMessageProcessStarted();
 
+        // MAIN LOOP
         while (!cancellation.IsCancellationRequested)
         {
             try
@@ -133,6 +156,9 @@ internal class Program
 
         // await worker completion
         await workerTask.ConfigureAwait(false);
+        // await metric dispatcher completion
+        await metricsTask.ConfigureAwait(false);
+        // log completion
         logger.LogSubscriberClientMessageProcessStoppedSuccessfully();
     }
 }
